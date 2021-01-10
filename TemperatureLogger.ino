@@ -22,8 +22,11 @@
 #include "uEEPROMLib.h"
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Fonts/TomThumb.h>
 #include <Sodaq_SHT2x.h>
 
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
 #define PLOT_Y_MAX_C 30.0
 #define PLOT_Y_MIN_C 15.0
 #define PLOT_Y_TOP 10
@@ -35,8 +38,7 @@
 #define RAMLOG_LENGTH_BYTES PLOT_X_PIXELS
 #define LOG_LENGTH_BYTES 128
 #define DISPLAY_I2C_ADDRESS 0x3C
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 32
+#define TEMPERATURE_NOT_SET 0xFF
 
 uRTCLib *rtc;
 DCServices *dcServices;
@@ -57,8 +59,8 @@ void displayTime()
 
     oled->clearDisplay();
     oled->setTextSize(2);
-    oled->setTextColor(SSD1306_WHITE); // Draw white text
-    oled->cp437(true);                 // Use full 256 char 'Code Page 437' font
+    oled->setTextColor(SSD1306_WHITE);
+    oled->cp437(true);
 
     sprintf(text, "%02i:%02i:%02i", rtc->hour(), rtc->minute(), rtc->second());
     oled->setCursor(18, 8);
@@ -117,9 +119,14 @@ uint8_t plotIndexToXOffset(uint8_t ix)
 
 void plotTemperature()
 {
-    oled->clearDisplay();
-    oled->drawLine(4, SCREEN_HEIGHT - 4, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, SSD1306_WHITE);
-    oled->drawLine(4, SCREEN_HEIGHT - 4, 4, 8, SSD1306_WHITE);
+    // oled->clearDisplay();
+    // oled->setFont(&TomThumb);
+    // oled->setTextSize(1);
+    // oled->setTextColor(SSD1306_WHITE);
+    // oled->setCursor(0, 7);
+    // oled->print("T x=24h y=15-30C");
+    oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_RIGHT, PLOT_Y_BOTTOM, SSD1306_WHITE);
+    oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_LEFT, PLOT_Y_TOP, SSD1306_WHITE);
 
     for (int ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += 4)
     {
@@ -128,13 +135,24 @@ void plotTemperature()
         oled->drawPixel(ix, temperatrureToYOffset(30), SSD1306_WHITE);
     }
 
-    for (int ix = 1; ix < RAMLOG_LENGTH_BYTES; ix++)
+    for (int ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += PLOT_X_PIXELS / 12)
     {
-        //int dataPoint = (logStartPointer + ix) % LOG_LENGTH_BYTES;
-        int8_t temperaturePointA = (ramLog[ix - 1] - 127) / 2;
-        int8_t temperaturePointB = (ramLog[ix] - 127) / 2;
-        oled->drawLine(plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointA), plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointB), SSD1306_WHITE);
+        oled->drawLine(ix, PLOT_Y_BOTTOM - 1, ix, PLOT_Y_BOTTOM + 1, SSD1306_WHITE);
     }
+
+    // for (int ix = 0; ix < RAMLOG_LENGTH_BYTES; ix++)
+    // {
+    //     uint8_t readingPointer = (ramLogPointer + ix) % RAMLOG_LENGTH_BYTES;
+
+    //     if (readingPointer == 0 || ramLog[readingPointer] == TEMPERATURE_NOT_SET || ramLog[readingPointer - 1] == TEMPERATURE_NOT_SET)
+    //     {
+    //         continue;
+    //     }
+
+    //     int8_t temperaturePointA = (ramLog[readingPointer - 1] - 127) / 2;
+    //     int8_t temperaturePointB = (ramLog[readingPointer] - 127) / 2;
+    //     oled->drawLine(plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointA), plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointB), SSD1306_WHITE);
+    // }
 
     oled->display();
 }
@@ -150,13 +168,17 @@ void setup()
 
     dcServices = new DCServices(DC_RADIO_NRF24_V2, rtc);
 
-    oled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+    oled = new Adafruit_SSD1306(SCREEN_WIDTH, 32, &Wire, -1);
     oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);
 
     oled->clearDisplay();
     oled->display();
 
     timeSyncOK = dcServices->syncRTCToTimeBroadcast();
+
+    // Initialize to TEMPERATURE_NOT_SET which is not plotted.
+    // This later will be a copy from the last RAMLOG_LENGTH_BYTES in EEPROM.
+    memset(ramLog, TEMPERATURE_NOT_SET, RAMLOG_LENGTH_BYTES);
 }
 
 void loop()
