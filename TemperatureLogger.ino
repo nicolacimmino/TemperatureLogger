@@ -17,7 +17,7 @@
 //    along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#include <DCServices.h>
+#include <Wire.h>
 #include <uRTCLib.h>
 #include "uEEPROMLib.h"
 #include <Adafruit_GFX.h>
@@ -38,9 +38,11 @@
 #define LOG_LENGTH_BYTES 128
 #define DISPLAY_I2C_ADDRESS 0x3C
 #define TEMPERATURE_NOT_SET 0xFF
+#define PIN_BUTTON_A 6
+#define DISPLAY_MODES 2
+uint8_t mode = 0;
 
 uRTCLib *rtc;
-DCServices *dcServices;
 Adafruit_SSD1306 *oled;
 uEEPROMLib *eeprom;
 bool timeSyncOK = false;
@@ -62,7 +64,7 @@ void displayTime()
     oled->cp437(true);
 
     sprintf(text, "%02i:%02i:%02i", rtc->hour(), rtc->minute(), rtc->second());
-    oled->setCursor(18, 8);
+    oled->setCursor(18, 16);
     oled->print(text);
 
     float temperature = (SHT2x.GetTemperature() * 10) / 10.0;
@@ -70,11 +72,11 @@ void displayTime()
 
     oled->setTextSize(1);
     sprintf(text, "%sC", dtostrf(temperature, 3, 1, textB));
-    oled->setCursor(0, 25);
+    oled->setCursor(0, 50);
     oled->print(text);
 
     sprintf(text, "%s%%", dtostrf(humidity, 3, 0, textB));
-    oled->setCursor(103, 25);
+    oled->setCursor(103, 50);
     oled->print(text);
 
     if (timeSyncOK)
@@ -97,7 +99,6 @@ void recordData()
 
     uint8_t temperatureEncoded = 127 + (SHT2x.GetTemperature() * 2);
     // eeprom->eeprom_write(logEndPointer, temperatureEncoded);
-
     // logEndPointer = (logEndPointer + 1) % LOG_LENGTH_BYTES;
 
     ramLog[ramLogPointer] = temperatureEncoded;
@@ -123,7 +124,7 @@ void plotTemperature()
     oled->setTextColor(SSD1306_WHITE);
     oled->setCursor(0, 7);
     oled->print("T x=24h y=15-30C");
-    
+
     oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_RIGHT, PLOT_Y_BOTTOM, SSD1306_WHITE);
     oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_LEFT, PLOT_Y_TOP, SSD1306_WHITE);
 
@@ -163,37 +164,49 @@ void setup()
 
     rtc = new uRTCLib(0x68);
 
-    eeprom = new uEEPROMLib(0x57);
+    //eeprom = new uEEPROMLib(0x57);
 
-    dcServices = new DCServices(DC_RADIO_NRF24_V2, rtc);
+    //    dcServices = new DCServices(DC_RADIO_NRF24_V2, rtc);
 
-    timeSyncOK = dcServices->syncRTCToTimeBroadcast();
-
-    oled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
-    oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);
-    oled->display();
-    delay(500);
+    //timeSyncOK = dcServices->syncRTCToTimeBroadcast();
 
     // Initialize to TEMPERATURE_NOT_SET which is not plotted.
     // This later will be a copy from the last RAMLOG_LENGTH_BYTES in EEPROM.
     memset(ramLog, TEMPERATURE_NOT_SET, RAMLOG_LENGTH_BYTES);
+
+    pinMode(PIN_BUTTON_A, INPUT_PULLUP);
+
+    oled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+    oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);
+    oled->clearDisplay();
+    oled->display();
 }
 
 void loop()
 {
-    plotTemperature();
-    //displayTime();
-    delay(1000);
-    // if ((millis() / 1000) % 20 < 10)
-    // {
-    //     displayTime();
-    // }
-    // else
-    // {
-    //     plotTemperature();
-    // }
+    bool modechange = false;
+
+    if (digitalRead(PIN_BUTTON_A) == LOW)
+    {
+        mode = (mode + 1) % DISPLAY_MODES;
+         modechange = true;
+    }
+
+    if (mode == 0)
+    {
+        displayTime();
+    }
+    else
+    {
+        plotTemperature();
+    }
 
     recordData();
 
-    dcServices->loop();
+    while (modechange && digitalRead(PIN_BUTTON_A) == LOW)
+    {
+        delay(1);
+    }
+
+    // dcServices->loop();
 }
