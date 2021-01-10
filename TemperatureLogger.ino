@@ -26,7 +26,7 @@
 #include <Sodaq_SHT2x.h>
 
 #define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
+#define SCREEN_HEIGHT 32
 #define PLOT_Y_MAX_C 30.0
 #define PLOT_Y_MIN_C 15.0
 #define PLOT_Y_TOP 10
@@ -140,19 +140,19 @@ void plotTemperature()
         oled->drawLine(ix, PLOT_Y_BOTTOM - 1, ix, PLOT_Y_BOTTOM + 1, SSD1306_WHITE);
     }
 
-    // for (int ix = 0; ix < RAMLOG_LENGTH_BYTES; ix++)
-    // {
-    //     uint8_t readingPointer = (ramLogPointer + ix) % RAMLOG_LENGTH_BYTES;
+    for (int ix = 0; ix < RAMLOG_LENGTH_BYTES; ix++)
+    {
+        uint8_t readingPointer = (ramLogPointer + ix) % RAMLOG_LENGTH_BYTES;
 
-    //     if (readingPointer == 0 || ramLog[readingPointer] == TEMPERATURE_NOT_SET || ramLog[readingPointer - 1] == TEMPERATURE_NOT_SET)
-    //     {
-    //         continue;
-    //     }
+        if (readingPointer == 0 || ramLog[readingPointer] == TEMPERATURE_NOT_SET || ramLog[readingPointer - 1] == TEMPERATURE_NOT_SET)
+        {
+            continue;
+        }
 
-    //     int8_t temperaturePointA = (ramLog[readingPointer - 1] - 127) / 2;
-    //     int8_t temperaturePointB = (ramLog[readingPointer] - 127) / 2;
-    //     oled->drawLine(plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointA), plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointB), SSD1306_WHITE);
-    // }
+        int8_t temperaturePointA = (ramLog[readingPointer - 1] - 127) / 2;
+        int8_t temperaturePointB = (ramLog[readingPointer] - 127) / 2;
+        oled->drawLine(plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointA), plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointB), SSD1306_WHITE);
+    }
 
     oled->display();
 }
@@ -168,7 +168,7 @@ void setup()
 
     dcServices = new DCServices(DC_RADIO_NRF24_V2, rtc);
 
-    oled = new Adafruit_SSD1306(SCREEN_WIDTH, 32, &Wire, -1);
+    oled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
     oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);
 
     oled->clearDisplay();
