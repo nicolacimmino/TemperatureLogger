@@ -24,6 +24,20 @@
 #include <Adafruit_SSD1306.h>
 #include <Sodaq_SHT2x.h>
 
+#define PLOT_Y_MAX_C 30.0
+#define PLOT_Y_MIN_C 15.0
+#define PLOT_Y_TOP 10
+#define PLOT_Y_BOTTOM (SCREEN_HEIGHT - 4)
+#define PLOT_Y_PIXELS (PLOT_Y_BOTTOM - PLOT_Y_TOP)
+#define PLOT_X_LEFT 4
+#define PLOT_X_RIGHT (SCREEN_WIDTH - 4)
+#define PLOT_X_PIXELS (PLOT_X_RIGHT - PLOT_X_LEFT)
+#define RAMLOG_LENGTH_BYTES PLOT_X_PIXELS
+#define LOG_LENGTH_BYTES 128
+#define DISPLAY_I2C_ADDRESS 0x3C
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 32
+
 uRTCLib *rtc;
 DCServices *dcServices;
 Adafruit_SSD1306 *oled;
@@ -31,11 +45,8 @@ uEEPROMLib *eeprom;
 bool timeSyncOK = false;
 uint16_t logStartPointer = 0;
 uint16_t logEndPointer = 0;
-
-#define LOG_LENGTH_BYTES 128
-#define DISPLAY_I2C_ADDRESS 0x3C
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 32
+uint8_t ramLog[RAMLOG_LENGTH_BYTES];
+uint8_t ramLogPointer = 0;
 
 void displayTime()
 {
@@ -62,7 +73,7 @@ void displayTime()
     oled->print(text);
 
     sprintf(text, "%s%%", dtostrf(humidity, 3, 0, textB));
-    oled->setCursor(100, 25);
+    oled->setCursor(103, 25);
     oled->print(text);
 
     if (timeSyncOK)
@@ -84,23 +95,45 @@ void recordData()
     lastRecord = millis();
 
     uint8_t temperatureEncoded = 127 + (SHT2x.GetTemperature() * 2);
-    eeprom->eeprom_write(logEndPointer, temperatureEncoded);
+    // eeprom->eeprom_write(logEndPointer, temperatureEncoded);
 
-    logEndPointer = (logEndPointer + 1) % LOG_LENGTH_BYTES;
+    // logEndPointer = (logEndPointer + 1) % LOG_LENGTH_BYTES;
+
+    ramLog[ramLogPointer] = temperatureEncoded;
+    ramLogPointer = (ramLogPointer + 1) % RAMLOG_LENGTH_BYTES;
+}
+
+uint8_t temperatrureToYOffset(float temperature)
+{
+    return PLOT_Y_TOP + PLOT_Y_PIXELS - floor((PLOT_Y_PIXELS * (temperature - PLOT_Y_MIN_C)) / (PLOT_Y_MAX_C - PLOT_Y_MIN_C));
+}
+
+uint8_t plotIndexToXOffset(uint8_t ix)
+{
+    // This is simplified as the RAM shadow of the log is on purpose as
+    // many points as the plot pixels.
+    return ix + PLOT_X_LEFT;
 }
 
 void plotTemperature()
 {
     oled->clearDisplay();
     oled->drawLine(4, SCREEN_HEIGHT - 4, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, SSD1306_WHITE);
-    oled->drawLine(4, SCREEN_HEIGHT - 4, 4, 10, SSD1306_WHITE);
+    oled->drawLine(4, SCREEN_HEIGHT - 4, 4, 8, SSD1306_WHITE);
 
-    for (int ix = 0; ix < LOG_LENGTH_BYTES - 8; ix++)
+    for (int ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += 4)
     {
-        int dataPoint = (logStartPointer + ix) % LOG_LENGTH_BYTES;
-        int8_t temperaturePointA = (eeprom->eeprom_read(dataPoint) - 127) / 2;
-        int8_t temperaturePointB = (eeprom->eeprom_read(dataPoint + 1) - 127) / 2;
-        oled->drawLine(ix + 4, 15 + SCREEN_HEIGHT - temperaturePointA, ix + 5, 15 + SCREEN_HEIGHT - temperaturePointB, SSD1306_WHITE);
+        oled->drawPixel(ix, temperatrureToYOffset(20), SSD1306_WHITE);
+        oled->drawPixel(ix, temperatrureToYOffset(25), SSD1306_WHITE);
+        oled->drawPixel(ix, temperatrureToYOffset(30), SSD1306_WHITE);
+    }
+
+    for (int ix = 1; ix < RAMLOG_LENGTH_BYTES; ix++)
+    {
+        //int dataPoint = (logStartPointer + ix) % LOG_LENGTH_BYTES;
+        int8_t temperaturePointA = (ramLog[ix - 1] - 127) / 2;
+        int8_t temperaturePointB = (ramLog[ix] - 127) / 2;
+        oled->drawLine(plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointA), plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointB), SSD1306_WHITE);
     }
 
     oled->display();
@@ -128,14 +161,16 @@ void setup()
 
 void loop()
 {
-    if ((millis() / 1000) % 20 < 10)
-    {
-        displayTime();
-    }
-    else
-    {
-        plotTemperature();
-    }
+    plotTemperature();
+    //displayTime();
+    // if ((millis() / 1000) % 20 < 10)
+    // {
+    //     displayTime();
+    // }
+    // else
+    // {
+    //     plotTemperature();
+    // }
 
     recordData();
 
