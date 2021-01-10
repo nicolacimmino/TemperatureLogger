@@ -22,15 +22,14 @@
 #include "uEEPROMLib.h"
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <Fonts/TomThumb.h>
 #include <Sodaq_SHT2x.h>
 
 #define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 32
+#define SCREEN_HEIGHT 64
 #define PLOT_Y_MAX_C 30.0
 #define PLOT_Y_MIN_C 15.0
-#define PLOT_Y_TOP 10
-#define PLOT_Y_BOTTOM (SCREEN_HEIGHT - 4)
+#define PLOT_Y_TOP 16
+#define PLOT_Y_BOTTOM (SCREEN_HEIGHT - 5)
 #define PLOT_Y_PIXELS (PLOT_Y_BOTTOM - PLOT_Y_TOP)
 #define PLOT_X_LEFT 4
 #define PLOT_X_RIGHT (SCREEN_WIDTH - 4)
@@ -119,12 +118,12 @@ uint8_t plotIndexToXOffset(uint8_t ix)
 
 void plotTemperature()
 {
-    // oled->clearDisplay();
-    // oled->setFont(&TomThumb);
-    // oled->setTextSize(1);
-    // oled->setTextColor(SSD1306_WHITE);
-    // oled->setCursor(0, 7);
-    // oled->print("T x=24h y=15-30C");
+    oled->clearDisplay();
+    oled->setTextSize(1);
+    oled->setTextColor(SSD1306_WHITE);
+    oled->setCursor(0, 7);
+    oled->print("T x=24h y=15-30C");
+    
     oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_RIGHT, PLOT_Y_BOTTOM, SSD1306_WHITE);
     oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_LEFT, PLOT_Y_TOP, SSD1306_WHITE);
 
@@ -168,13 +167,12 @@ void setup()
 
     dcServices = new DCServices(DC_RADIO_NRF24_V2, rtc);
 
+    timeSyncOK = dcServices->syncRTCToTimeBroadcast();
+
     oled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
     oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);
-
-    oled->clearDisplay();
     oled->display();
-
-    timeSyncOK = dcServices->syncRTCToTimeBroadcast();
+    delay(500);
 
     // Initialize to TEMPERATURE_NOT_SET which is not plotted.
     // This later will be a copy from the last RAMLOG_LENGTH_BYTES in EEPROM.
@@ -185,6 +183,7 @@ void loop()
 {
     plotTemperature();
     //displayTime();
+    delay(1000);
     // if ((millis() / 1000) % 20 < 10)
     // {
     //     displayTime();
