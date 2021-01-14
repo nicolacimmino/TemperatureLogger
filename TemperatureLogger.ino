@@ -37,8 +37,9 @@
 #define PLOT_X_LEFT 12
 #define PLOT_X_RIGHT (SCREEN_WIDTH - 4)
 #define PLOT_X_PIXELS (PLOT_X_RIGHT - PLOT_X_LEFT)
-#define RAMLOG_LENGTH_BYTES PLOT_X_PIXELS
-#define LOG_LENGTH_BYTES 128
+#define LOG_LENGTH_BYTES PLOT_X_PIXELS
+#define EEPROM_T_LOG_BASE 10
+#define EEPROM_LOG_PTR 0
 #define DISPLAY_I2C_ADDRESS 0x3C
 #define TEMPERATURE_NOT_SET 0xFF
 #define PIN_BUTTON_A 6
@@ -50,10 +51,6 @@ uRTCLib *rtc;
 Adafruit_SSD1306 *oled;
 uEEPROMLib *eeprom;
 uint8_t mode = 0;
-uint16_t logStartPointer = 0;
-uint16_t logEndPointer = 0;
-uint8_t ramLog[RAMLOG_LENGTH_BYTES];
-uint8_t ramLogPointer = 0;
 unsigned long lastButtonActivityTime = millis();
 bool powerSaveOn = false;
 
@@ -145,6 +142,8 @@ void displayTime()
     oled->display();
 }
 
+bool replotNeeded = true;
+
 void recordData()
 {
     static unsigned long lastRecord = millis();
@@ -156,11 +155,12 @@ void recordData()
 
     uint8_t temperatureEncoded = 127 + (SHT2x.GetTemperature() * 2);
 
-    // eeprom->eeprom_write(logEndPointer, temperatureEncoded);
-    // logEndPointer = (logEndPointer + 1) % LOG_LENGTH_BYTES;
+    uint8_t logPtr = eeprom->eeprom_read(EEPROM_LOG_PTR);
+    eeprom->eeprom_write(EEPROM_T_LOG_BASE + logPtr, temperatureEncoded);
+    logPtr = (logPtr + 1) % LOG_LENGTH_BYTES;
+    eeprom->eeprom_write(EEPROM_LOG_PTR, logPtr);
 
-    ramLog[ramLogPointer] = temperatureEncoded;
-    ramLogPointer = (ramLogPointer + 1) % RAMLOG_LENGTH_BYTES;
+    replotNeeded = true;
 }
 
 uint8_t temperatrureToYOffset(float temperature)
@@ -178,6 +178,11 @@ uint8_t plotIndexToXOffset(uint8_t ix)
 
 void plotTemperature()
 {
+    if (!replotNeeded)
+    {
+        return;
+    }
+
     clearDisplay();
 
     oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_RIGHT, PLOT_Y_BOTTOM, SSD1306_WHITE);
@@ -203,35 +208,46 @@ void plotTemperature()
         oled->drawLine(ix, PLOT_Y_BOTTOM - 1, ix, PLOT_Y_BOTTOM + 1, SSD1306_WHITE);
     }
 
-    for (int ix = 0; ix < RAMLOG_LENGTH_BYTES; ix++)
-    {
-        uint8_t readingPointer = (ramLogPointer + ix) % RAMLOG_LENGTH_BYTES;
+    oled->display();
 
-        if (readingPointer == 0 || ramLog[readingPointer] == TEMPERATURE_NOT_SET || ramLog[readingPointer - 1] == TEMPERATURE_NOT_SET)
+    int8_t temperaturePointA = 0;
+
+    uint16_t logPtr = eeprom->eeprom_read(EEPROM_LOG_PTR);
+
+    for (int ix = LOG_LENGTH_BYTES - 1; ix > 0; ix--)
+    {
+        uint8_t readingPointer = (logPtr + ix) % LOG_LENGTH_BYTES;
+
+        int8_t temperaturePointB = (eeprom->eeprom_read(EEPROM_T_LOG_BASE + readingPointer) - 127) / 2;
+
+        if (ix == LOG_LENGTH_BYTES - 1)
         {
+            temperaturePointA = temperaturePointB;
             continue;
         }
 
-        int8_t temperaturePointA = (ramLog[readingPointer - 1] - 127) / 2;
-        int8_t temperaturePointB = (ramLog[readingPointer] - 127) / 2;
         oled->drawLine(plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointA), plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointB), SSD1306_WHITE);
+
+        if (ix % 10 == 0)
+        {
+            oled->display();
+        }
+
+        temperaturePointA = temperaturePointB;
     }
 
     oled->display();
+
+    replotNeeded = false;
 }
 
 void setup()
 {
     Wire.begin();
-    Serial.begin(9600);
 
     rtc = new uRTCLib(0x68);
 
-    //eeprom = new uEEPROMLib(0x57);
-
-    // Initialize to TEMPERATURE_NOT_SET which is not plotted.
-    // This later will be a copy from the last RAMLOG_LENGTH_BYTES in EEPROM.
-    memset(ramLog, TEMPERATURE_NOT_SET, RAMLOG_LENGTH_BYTES);
+    eeprom = new uEEPROMLib(0x57);
 
     pinMode(PIN_BUTTON_A, INPUT_PULLUP);
 
@@ -267,18 +283,35 @@ void checkButtonA()
     {
         lastButtonActivityTime = millis();
 
+        if (powerSaveOn)
+        {
+            exitPowerSave();
+        }
+        else
+        {
+            mode = (mode + 1) % DISPLAY_MODES;
+        }
+
+        replotNeeded = true;
+        serveScreen();
+
         while (digitalRead(PIN_BUTTON_A) == LOW)
         {
             delay(1);
         }
+    }
+}
 
-        if (powerSaveOn)
-        {
-            exitPowerSave();
-            return;
-        }
-
-        mode = (mode + 1) % DISPLAY_MODES;
+void serveScreen()
+{
+    switch (mode)
+    {
+    case 0:
+        displayTime();
+        break;
+    case 1:
+        plotTemperature();
+        break;
     }
 }
 
@@ -293,22 +326,5 @@ void loop()
         return;
     }
 
-    static unsigned long lastPlot = 0;
-
-    if (millis() - lastPlot < 500)
-    {
-        return;
-    }
-
-    switch (mode)
-    {
-    case 0:
-        displayTime();
-        break;
-    case 1:
-        plotTemperature();
-        break;
-    }
-
-    lastPlot = millis();
+    serveScreen();
 }
