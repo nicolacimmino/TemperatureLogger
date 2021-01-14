@@ -21,10 +21,11 @@
 #include <avr/sleep.h>
 #include <Wire.h>
 #include <uRTCLib.h>
-#include "uEEPROMLib.h"
+#include <uEEPROMLib.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Sodaq_SHT2x.h>
+#include "ui.h"
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -99,9 +100,12 @@ uint8_t getBatteryLevel()
 
 void displayBatterLevel()
 {
-    oled->setCursor(100, 5);
-    oled->print(getBatteryLevel());
+    uint8_t batteryLevel = getBatteryLevel();
+    oled->setCursor(80, 5);
+    oled->print(batteryLevel);
     oled->print("%");
+
+    oled->drawBitmap(110, 5, batteryLogo[round(batteryLevel / 25.0)], BATTERY_LOGO_W, BATTERY_LOGO_H, SSD1306_WHITE);
 }
 
 void clearDisplay()
