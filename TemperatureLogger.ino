@@ -58,6 +58,16 @@ bool powerSaveOn = false;
 
 uint8_t getBatteryLevel()
 {
+    static uint8_t batteryLevel = 0;
+    static unsigned long lastMeasurementTime = 0;
+
+    if (batteryLevel != 0 && millis() - lastMeasurementTime < 1000)
+    {
+        return batteryLevel;
+    }
+
+    lastMeasurementTime = millis();
+
     // See this article for an in-depth explanation.
     // https://provideyourown.com/2012/secret-arduino-voltmeter-measure-battery-voltage/
     // tl;dr: we switch the ADC to measure the internal 1.1v reference using Vcc as reference, the rest is simple math.
@@ -72,7 +82,19 @@ uint8_t getBatteryLevel()
     long measuredVcc = 1125300L / (ADCL | (ADCH << 8));
     analogReference(DEFAULT);
 
-    return min(max((measuredVcc - 2700) / 7, 0), 100);
+    // We assume 3900mV max and 2700 being the safe discharge level. 3900-2700 => 1200
+    // 1200 / 12 => 100 (%).
+    uint8_t measuredLevel = min(max((measuredVcc - 2700) / 12, 0), 100);
+
+    // Init the IIR filter with the first sample otherwise the % indicator will ramp up slowly at power on.
+    if (batteryLevel == 0)
+    {
+        batteryLevel = measuredLevel;
+    }
+
+    batteryLevel = (0.9 * (float)batteryLevel) + (0.1 * (float)measuredLevel);
+
+    return batteryLevel;
 }
 
 void displayBatterLevel()
@@ -267,6 +289,13 @@ void loop()
         return;
     }
 
+    static unsigned long lastPlot = 0;
+
+    if (millis() - lastPlot < 500)
+    {
+        return;
+    }
+
     switch (mode)
     {
     case 0:
@@ -277,5 +306,5 @@ void loop()
         break;
     }
 
-    delay(500);
+    lastPlot = millis();
 }
