@@ -54,6 +54,8 @@ uEEPROMLib *eeprom;
 uint8_t mode = 0;
 unsigned long lastButtonActivityTime = millis();
 bool powerSaveOn = false;
+bool plotAutoscale = false;
+bool replotNeeded = true;
 
 uint8_t getBatteryLevel()
 {
@@ -143,8 +145,6 @@ void displayTime()
     oled->display();
 }
 
-bool replotNeeded = true;
-
 void recordData()
 {
     static unsigned long lastRecord = millis();
@@ -164,10 +164,10 @@ void recordData()
     replotNeeded = true;
 }
 
-uint8_t temperatrureToYOffset(float temperature)
+uint8_t temperatrureToYOffset(float temperature, int8_t minTemp, int8_t maxTemp)
 {
-    temperature = max(min(PLOT_Y_MAX_C, temperature), PLOT_Y_MIN_C);
-    return PLOT_Y_TOP + PLOT_Y_PIXELS - floor((PLOT_Y_PIXELS * (temperature - PLOT_Y_MIN_C)) / (PLOT_Y_MAX_C - PLOT_Y_MIN_C));
+    temperature = max(min(maxTemp, temperature), minTemp);
+    return PLOT_Y_TOP + PLOT_Y_PIXELS - floor((PLOT_Y_PIXELS * (temperature - minTemp)) / (maxTemp - minTemp));
 }
 
 uint8_t plotIndexToXOffset(uint8_t ix)
@@ -186,22 +186,41 @@ void plotTemperature()
 
     clearDisplay();
 
+    oled->setCursor(0, 5);
+    oled->print("BUSY....");
+    oled->display();
+
     oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_RIGHT, PLOT_Y_BOTTOM, SSD1306_WHITE);
     oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_LEFT, PLOT_Y_TOP, SSD1306_WHITE);
 
-    for (int ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += 4)
+    int8_t minTemp = 100;
+    int8_t maxTemp = -100;
+
+    if (plotAutoscale)
     {
-        oled->drawPixel(ix, temperatrureToYOffset(20), SSD1306_WHITE);
-        oled->drawPixel(ix, temperatrureToYOffset(25), SSD1306_WHITE);
-        oled->drawPixel(ix, temperatrureToYOffset(30), SSD1306_WHITE);
-        oled->setCursor(0, temperatrureToYOffset(15) - 3);
-        oled->print(15);
-        oled->setCursor(0, temperatrureToYOffset(20) - 3);
-        oled->print(20);
-        oled->setCursor(0, temperatrureToYOffset(25) - 3);
-        oled->print(25);
-        oled->setCursor(0, temperatrureToYOffset(30));
-        oled->print(30);
+        for (int ix = LOG_LENGTH_BYTES - 1; ix > 0; ix--)
+        {
+            int8_t temperature = (eeprom->eeprom_read(EEPROM_T_LOG_BASE + ix) - 127) / 2;
+            minTemp = min(minTemp, temperature);
+            maxTemp = max(maxTemp, temperature);
+        }
+    }
+    else
+    {
+        minTemp = 15;
+        maxTemp = 30;
+    }
+
+    uint8_t hTick = (maxTemp - minTemp) / 3;
+
+    for (uint8_t ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += 4)
+    {
+        for (uint8_t t = minTemp; t <= maxTemp; t += hTick)
+        {
+            oled->drawPixel(ix, temperatrureToYOffset(t, minTemp, maxTemp), SSD1306_WHITE);
+            oled->setCursor(0, temperatrureToYOffset(t, minTemp, maxTemp) - (3 + (t == maxTemp ? -3 : 0)));
+            oled->print(t);
+        }
     }
 
     for (int ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += PLOT_X_PIXELS / 12)
@@ -227,7 +246,7 @@ void plotTemperature()
             continue;
         }
 
-        oled->drawLine(plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointA), plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointB), SSD1306_WHITE);
+        oled->drawLine(plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointA, minTemp, maxTemp), plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointB, minTemp, maxTemp), SSD1306_WHITE);
 
         if (ix % 10 == 0)
         {
@@ -236,6 +255,8 @@ void plotTemperature()
 
         temperaturePointA = temperaturePointB;
     }
+
+    oled->fillRect(0,5, 50, 10, SSD1306_BLACK);
 
     oled->display();
 
@@ -251,6 +272,7 @@ void setup()
     eeprom = new uEEPROMLib(0x57);
 
     pinMode(PIN_BUTTON_A, INPUT_PULLUP);
+    pinMode(PIN_BUTTON_B, INPUT_PULLUP);
 
     oled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
     oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);
@@ -294,9 +316,35 @@ void checkButtonA()
         }
 
         replotNeeded = true;
+        plotAutoscale = false;
         serveScreen();
 
         while (digitalRead(PIN_BUTTON_A) == LOW)
+        {
+            delay(1);
+        }
+    }
+}
+
+void checkButtonB()
+{
+    if (digitalRead(PIN_BUTTON_B) == LOW)
+    {
+        lastButtonActivityTime = millis();
+
+        if (powerSaveOn)
+        {
+            exitPowerSave();
+        }
+        else
+        {
+            plotAutoscale = !plotAutoscale;
+        }
+
+        replotNeeded = true;
+        serveScreen();
+
+        while (digitalRead(PIN_BUTTON_B) == LOW)
         {
             delay(1);
         }
@@ -321,6 +369,7 @@ void loop()
     recordData();
     managePowerSave();
     checkButtonA();
+    checkButtonB();
 
     if (powerSaveOn)
     {
