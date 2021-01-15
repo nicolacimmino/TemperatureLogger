@@ -80,9 +80,9 @@ uint8_t getBatteryLevel()
     long measuredVcc = 1125300L / (ADCL | (ADCH << 8));
     analogReference(DEFAULT);
 
-    // We assume 3900mV max and 2700 being the safe discharge level. 3900-2700 => 1200
-    // 1200 / 12 => 100 (%).
-    uint8_t measuredLevel = min(max((measuredVcc - 2700) / 12, 0), 100);
+    // We assume 3900mV max and 2900 being the safe discharge level. 3900-2900 => 1000
+    // 1000 / 10 => 100 (%).
+    uint8_t measuredLevel = min(max((measuredVcc - 2900) / 10, 0), 100);
 
     // Init the IIR filter with the first sample otherwise the % indicator will ramp up slowly at power on.
     if (batteryLevel == 0)
@@ -226,7 +226,7 @@ void plotTemperature()
             continue;
         }
 
-        oled->drawLine(plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointA), plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointB), SSD1306_WHITE);
+        oled->drawLine(plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointA), plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointB), SSD1306_WHITE);
 
         if (ix % 10 == 0)
         {
