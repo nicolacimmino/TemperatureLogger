@@ -25,38 +25,16 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Sodaq_SHT2x.h>
-#include "ui.h"
-#include <DCServices.h>
 
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-#define PLOT_Y_MAX_C 30.0
-#define PLOT_Y_MIN_C 15.0
-#define PLOT_Y_TOP 16
-#define PLOT_Y_BOTTOM (SCREEN_HEIGHT - 5)
-#define PLOT_Y_PIXELS (PLOT_Y_BOTTOM - PLOT_Y_TOP)
-#define PLOT_X_LEFT 20
-#define PLOT_X_RIGHT (SCREEN_WIDTH - 4)
-#define PLOT_X_PIXELS (PLOT_X_RIGHT - PLOT_X_LEFT)
-#define LOG_LENGTH_BYTES PLOT_X_PIXELS
-#define EEPROM_T_LOG_BASE 10
-#define EEPROM_LOG_PTR 0
-#define DISPLAY_I2C_ADDRESS 0x3C
-#define TEMPERATURE_NOT_SET 0xFF
-#define PIN_BUTTON_A 7
-#define PIN_BUTTON_B 6
-#define DISPLAY_MODES 2
-#define POWER_SAVE_TIMEOUT_MS 20000
-#define RECORD_DATA_INTERVAL_MS 300000 // 5 minutes
+#include "config.h"
+#include "ui.h"
+#include "powerManager.h"
 
 uRTCLib *rtc;
 Adafruit_SSD1306 *oled;
 uEEPROMLib *eeprom;
-DCServices *dcServices;
 
 uint8_t mode = 0;
-unsigned long lastButtonActivityTime = millis();
-bool powerSaveOn = false;
 bool plotAutoscale = false;
 bool replotNeeded = true;
 
@@ -157,6 +135,11 @@ void recordData()
     }
     lastRecord = millis();
 
+    if (PowerManager::level > PS_LEVEL_1)
+    {
+        PowerManager::enterL1();
+    }
+
     uint8_t temperatureEncoded = 127 + (SHT2x.GetTemperature() * 2);
 
     uint8_t logPtr = eeprom->eeprom_read(EEPROM_LOG_PTR);
@@ -165,6 +148,8 @@ void recordData()
     eeprom->eeprom_write(EEPROM_LOG_PTR, logPtr);
 
     replotNeeded = true;
+
+    PowerManager::restoreLevel();
 }
 
 uint8_t temperatrureToYOffset(float temperature, int8_t minTemp, int8_t maxTemp)
@@ -258,7 +243,8 @@ void plotTemperature()
             oled->display();
         }
 
-        if(temperaturePointA > maxTemp || temperaturePointA < minTemp) {
+        if (temperaturePointA > maxTemp || temperaturePointA < minTemp)
+        {
             overflow = true;
         }
 
@@ -267,9 +253,10 @@ void plotTemperature()
 
     oled->fillRect(0, 5, 50, 10, SSD1306_BLACK);
 
-    if(overflow) {
+    if (overflow)
+    {
         oled->setCursor(0, 5);
-        oled->print("OVFL");        
+        oled->print("OVFL");
     }
 
     oled->display();
@@ -288,54 +275,22 @@ void setup()
     pinMode(PIN_BUTTON_A, INPUT_PULLUP);
     pinMode(PIN_BUTTON_B, INPUT_PULLUP);
 
-    // // if (digitalRead(PIN_BUTTON_B) == LOW)
-    // // {
-    //     dcServices = new DCServices(DC_RADIO_NRF24_V2, rtc);
-    //     dcServices->syncRTCToTimeBroadcast();
-    //     delete dcServices;
-    // //}
-
     oled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
     oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);
     oled->clearDisplay();
     oled->display();
 }
 
-void managePowerSave()
-{
-    if (powerSaveOn)
-    {
-        return;
-    }
-
-    if (millis() - lastButtonActivityTime > POWER_SAVE_TIMEOUT_MS)
-    {
-        powerSaveOn = true;
-        oled->ssd1306_command(SSD1306_DISPLAYOFF);
-    }
-}
-
-void exitPowerSave()
-{
-    powerSaveOn = false;
-    oled->ssd1306_command(SSD1306_DISPLAYON);
-}
-
 void checkButtonA()
 {
     if (digitalRead(PIN_BUTTON_A) == LOW)
     {
-        lastButtonActivityTime = millis();
-
-        if (powerSaveOn)
-        {
-            exitPowerSave();
-        }
-        else
-        {
+        if(PowerManager::level == PS_LEVEL_0) {
             mode = (mode + 1) % DISPLAY_MODES;
         }
 
+        PowerManager::onUserInteratcion();
+        
         replotNeeded = true;
         plotAutoscale = false;
         serveScreen();
@@ -355,7 +310,7 @@ void checkButtonB()
 
         if (powerSaveOn)
         {
-            exitPowerSave();
+            PowerManager::exitPowerSave();
         }
         else
         {
@@ -388,7 +343,7 @@ void serveScreen()
 void loop()
 {
     recordData();
-    managePowerSave();
+    PowerManager::managePowerSave();
     checkButtonA();
     checkButtonB();
 
