@@ -35,7 +35,7 @@
 #define PLOT_Y_TOP 16
 #define PLOT_Y_BOTTOM (SCREEN_HEIGHT - 5)
 #define PLOT_Y_PIXELS (PLOT_Y_BOTTOM - PLOT_Y_TOP)
-#define PLOT_X_LEFT 12
+#define PLOT_X_LEFT 20
 #define PLOT_X_RIGHT (SCREEN_WIDTH - 4)
 #define PLOT_X_PIXELS (PLOT_X_RIGHT - PLOT_X_LEFT)
 #define LOG_LENGTH_BYTES PLOT_X_PIXELS
@@ -214,14 +214,14 @@ void plotTemperature()
         maxTemp = 30;
     }
 
-    uint8_t hTick = max((maxTemp - minTemp) / 3, 1);
+    uint8_t hTick = max(abs((maxTemp - minTemp) / 3), 1);
 
     for (uint8_t ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += 4)
     {
-        for (uint8_t t = minTemp; t <= maxTemp; t += hTick)
+        for (int8_t t = minTemp; t <= maxTemp; t += hTick)
         {
             oled->drawPixel(ix, temperatrureToYOffset(t, minTemp, maxTemp), SSD1306_WHITE);
-            oled->setCursor(0, temperatrureToYOffset(t, minTemp, maxTemp) - (3 + (t == maxTemp ? -3 : 0)));
+            oled->setCursor(0, temperatrureToYOffset(t, minTemp, maxTemp) - (2 + (t == maxTemp ? -3 : 0)));
             oled->print(t);
         }
     }
