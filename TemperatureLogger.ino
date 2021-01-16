@@ -26,6 +26,7 @@
 #include <Adafruit_SSD1306.h>
 #include <Sodaq_SHT2x.h>
 #include "ui.h"
+#include <DCServices.h>
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -51,6 +52,8 @@
 uRTCLib *rtc;
 Adafruit_SSD1306 *oled;
 uEEPROMLib *eeprom;
+DCServices *dcServices;
+
 uint8_t mode = 0;
 unsigned long lastButtonActivityTime = millis();
 bool powerSaveOn = false;
@@ -211,7 +214,7 @@ void plotTemperature()
         maxTemp = 30;
     }
 
-    uint8_t hTick = (maxTemp - minTemp) / 3;
+    uint8_t hTick = max((maxTemp - minTemp) / 3, 1);
 
     for (uint8_t ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += 4)
     {
@@ -234,6 +237,8 @@ void plotTemperature()
 
     uint16_t logPtr = eeprom->eeprom_read(EEPROM_LOG_PTR);
 
+    bool overflow = false;
+
     for (int ix = LOG_LENGTH_BYTES - 1; ix > 0; ix--)
     {
         uint8_t readingPointer = (logPtr + ix) % LOG_LENGTH_BYTES;
@@ -253,10 +258,19 @@ void plotTemperature()
             oled->display();
         }
 
+        if(temperaturePointA > maxTemp || temperaturePointA < minTemp) {
+            overflow = true;
+        }
+
         temperaturePointA = temperaturePointB;
     }
 
-    oled->fillRect(0,5, 50, 10, SSD1306_BLACK);
+    oled->fillRect(0, 5, 50, 10, SSD1306_BLACK);
+
+    if(overflow) {
+        oled->setCursor(0, 5);
+        oled->print("OVFL");        
+    }
 
     oled->display();
 
@@ -273,6 +287,13 @@ void setup()
 
     pinMode(PIN_BUTTON_A, INPUT_PULLUP);
     pinMode(PIN_BUTTON_B, INPUT_PULLUP);
+
+    // // if (digitalRead(PIN_BUTTON_B) == LOW)
+    // // {
+    //     dcServices = new DCServices(DC_RADIO_NRF24_V2, rtc);
+    //     dcServices->syncRTCToTimeBroadcast();
+    //     delete dcServices;
+    // //}
 
     oled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
     oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);
