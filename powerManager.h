@@ -1,6 +1,8 @@
 #ifndef __TEMPERATURE_POWERMANAGER_H__
 #define __TEMPERATURE_POWERMANAGER_H__
 
+extern Adafruit_SSD1306 *oled;
+
 // L0   Fully operational (display ON, perhipherals on)
 // L1   Background activity (display OFF, perhipherals on)
 // L2   Low power (display OFF, perhipherals off)
@@ -15,6 +17,32 @@ namespace PowerManager
 unsigned long lastUserInteractionTime = millis();
 uint8_t level = PS_LEVEL_0;
 uint8_t previousLevel = PS_LEVEL_0;
+
+void enterL0()
+{
+    previousLevel = level;
+        
+    oled->ssd1306_command(SSD1306_DISPLAYON);
+
+    level = PS_LEVEL_0;
+}
+
+void enterL1()
+{
+    previousLevel = level;
+    level = PS_LEVEL_1;
+    //
+}
+
+void enterL2()
+{
+    previousLevel = level;
+
+    oled->ssd1306_command(SSD1306_DISPLAYOFF);
+
+    level = PS_LEVEL_2;
+    //
+}
 
 void loop()
 {
@@ -36,27 +64,6 @@ void onUserInteratcion()
     if(level != PS_LEVEL_0) {
         enterL0();
     }
-}
-
-void enterL0()
-{
-    previousLevel = level;
-    level = PS_LEVEL_0;
-    oled->ssd1306_command(SSD1306_DISPLAYON);
-}
-
-void enterL1()
-{
-    previousLevel = level;
-    level = PS_LEVEL_1;
-    //
-}
-
-void enterL2()
-{
-    previousLevel = level;
-    level = PS_LEVEL_2;
-    //
 }
 
 void restoreLevel()

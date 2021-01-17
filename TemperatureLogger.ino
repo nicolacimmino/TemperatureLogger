@@ -135,9 +135,11 @@ void recordData()
     }
     lastRecord = millis();
 
+    bool restoreLevel = false;
     if (PowerManager::level > PS_LEVEL_1)
     {
         PowerManager::enterL1();
+        restoreLevel = true;
     }
 
     uint8_t temperatureEncoded = 127 + (SHT2x.GetTemperature() * 2);
@@ -149,7 +151,10 @@ void recordData()
 
     replotNeeded = true;
 
-    PowerManager::restoreLevel();
+    if (restoreLevel)
+    {
+        PowerManager::restoreLevel();
+    }
 }
 
 uint8_t temperatrureToYOffset(float temperature, int8_t minTemp, int8_t maxTemp)
@@ -266,6 +271,9 @@ void plotTemperature()
 
 void setup()
 {
+    pinMode(PIN_PWR_AUX_DEVS, OUTPUT);
+    digitalWrite(PIN_PWR_AUX_DEVS, HIGH);
+
     Wire.begin();
 
     rtc = new uRTCLib(0x68);
@@ -285,12 +293,13 @@ void checkButtonA()
 {
     if (digitalRead(PIN_BUTTON_A) == LOW)
     {
-        if(PowerManager::level == PS_LEVEL_0) {
+        if (PowerManager::level == PS_LEVEL_0)
+        {
             mode = (mode + 1) % DISPLAY_MODES;
         }
 
         PowerManager::onUserInteratcion();
-        
+
         replotNeeded = true;
         plotAutoscale = false;
         serveScreen();
@@ -306,16 +315,12 @@ void checkButtonB()
 {
     if (digitalRead(PIN_BUTTON_B) == LOW)
     {
-        lastButtonActivityTime = millis();
-
-        if (powerSaveOn)
-        {
-            PowerManager::exitPowerSave();
-        }
-        else
+        if (PowerManager::level == PS_LEVEL_0)
         {
             plotAutoscale = !plotAutoscale;
         }
+
+        PowerManager::onUserInteratcion();
 
         replotNeeded = true;
         serveScreen();
@@ -342,12 +347,12 @@ void serveScreen()
 
 void loop()
 {
+    PowerManager::loop();
     recordData();
-    PowerManager::managePowerSave();
     checkButtonA();
     checkButtonB();
 
-    if (powerSaveOn)
+    if (PowerManager::level != PS_LEVEL_0)
     {
         return;
     }
