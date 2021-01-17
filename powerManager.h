@@ -11,6 +11,12 @@ extern Adafruit_SSD1306 *oled;
 #define PS_LEVEL_1 1
 #define PS_LEVEL_2 2
 
+// Some I2C devices can interfere with the bus
+// for a short time during power up. This is a
+// guard between powring back up aux devs and
+// accessing the bus.
+#define PS_BUS_GUARD_TIME_MS 100
+
 namespace PowerManager
 {
 
@@ -21,7 +27,9 @@ uint8_t previousLevel = PS_LEVEL_0;
 void enterL0()
 {
     previousLevel = level;
-        
+
+    digitalWrite(PIN_PWR_AUX_DEVS, HIGH);
+    delay(PS_BUS_GUARD_TIME_MS);
     oled->ssd1306_command(SSD1306_DISPLAYON);
 
     level = PS_LEVEL_0;
@@ -30,6 +38,10 @@ void enterL0()
 void enterL1()
 {
     previousLevel = level;
+
+    digitalWrite(PIN_PWR_AUX_DEVS, HIGH);
+    delay(PS_BUS_GUARD_TIME_MS);
+
     level = PS_LEVEL_1;
     //
 }
@@ -39,6 +51,7 @@ void enterL2()
     previousLevel = level;
 
     oled->ssd1306_command(SSD1306_DISPLAYOFF);
+    digitalWrite(PIN_PWR_AUX_DEVS, LOW);
 
     level = PS_LEVEL_2;
     //
@@ -61,7 +74,8 @@ void onUserInteratcion()
 {
     lastUserInteractionTime = millis();
 
-    if(level != PS_LEVEL_0) {
+    if (level != PS_LEVEL_0)
+    {
         enterL0();
     }
 }
