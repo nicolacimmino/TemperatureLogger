@@ -17,6 +17,8 @@
 //    along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
+//#define __ENABLE_DC_SERVICES__ 1
+
 #include <Arduino.h>
 #include <avr/sleep.h>
 #include <Wire.h>
@@ -29,6 +31,11 @@
 #include "config.h"
 #include "ui.h"
 #include "powerManager.h"
+
+#ifdef __ENABLE_DC_SERVICES__
+#include <DCServices.h>
+DCServices *dcServices;
+#endif
 
 uRTCLib *rtc;
 Adafruit_SSD1306 *oled;
@@ -271,12 +278,20 @@ void plotTemperature()
 
 void setup()
 {
+    Serial.begin(9600);
+
     pinMode(PIN_PWR_AUX_DEVS, OUTPUT);
     digitalWrite(PIN_PWR_AUX_DEVS, HIGH);
 
     Wire.begin();
 
     rtc = new uRTCLib(0x68);
+
+#ifdef __ENABLE_DC_SERVICES__
+    delay(100);
+    dcServices = new DCServices(DC_RADIO_NRF24_V2, rtc);
+    dcServices->syncRTCToTimeBroadcast();    
+#endif
 
     eeprom = new uEEPROMLib(0x57);
 
@@ -346,7 +361,7 @@ void serveScreen()
 }
 
 void loop()
-{
+{    
     PowerManager::loop();
     recordData();
     checkButtonA();
