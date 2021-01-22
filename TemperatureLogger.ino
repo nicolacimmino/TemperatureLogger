@@ -235,7 +235,7 @@ void plotTemperature()
 
     oled->display();
 
-    int8_t temperaturePointA = 0;
+    float temperaturePointA = 0;
 
     uint16_t logPtr = eeprom->eeprom_read(EEPROM_LOG_PTR);
 
@@ -245,7 +245,7 @@ void plotTemperature()
     {
         uint8_t readingPointer = (logPtr + ix) % LOG_LENGTH_BYTES;
 
-        int8_t temperaturePointB = (eeprom->eeprom_read(EEPROM_T_LOG_BASE + readingPointer) - 127) / 2;
+        float temperaturePointB = (eeprom->eeprom_read(EEPROM_T_LOG_BASE + readingPointer) - 127) / 2;
 
         if (ix == LOG_LENGTH_BYTES - 1)
         {
