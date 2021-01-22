@@ -43,7 +43,7 @@ unsigned long lastTimeSync = 0;
 
 bool isTimeSynced()
 {
-    return (lastTimeSync > 0) && (millis() - lastTimeSync) < 86400;
+    return (lastTimeSync > 0) && (millis() - lastTimeSync) < 86400000;
 }
 
 uint8_t getBatteryLevel()
