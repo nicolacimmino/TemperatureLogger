@@ -4,6 +4,19 @@
 #define BATTERY_LOGO_W 16
 #define BATTERY_LOGO_H 8
 
+#define TIME_SYNC_LOGO_W 8
+#define TIME_SYNC_LOGO_H 8
+
+static const unsigned char PROGMEM timeSyncLogo[] = {
+    B11100000,
+    B00011000,
+    B11000100,
+    B00110010,
+    B11001010,
+    B00101001,
+    B11010101,
+    B11010101};
+
 static const unsigned char PROGMEM batteryLogo[5][16] = {
     {B11111111, B11111100,
      B10000000, B00000100,
