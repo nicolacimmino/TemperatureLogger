@@ -113,21 +113,26 @@ void displayTime()
 
     clearDisplay();
 
-    sprintf(text, "%02i:%02i:%02i", rtc->hour(), rtc->minute(), rtc->second());
-    oled->setTextSize(2);
+    sprintf(text, "%02i:%02i", rtc->hour(), rtc->minute());
+    oled->setTextSize(3);
     oled->setCursor(18, 21);
+    oled->print(text);
+
+    sprintf(text, "%02i", rtc->second());
+    oled->setCursor(110, 35);
+    oled->setTextSize(1);
     oled->print(text);
 
     float temperature = (SHT2x.GetTemperature() * 10) / 10.0;
     float humidity = round(SHT2x.GetHumidity());
 
     sprintf(text, "%sC", dtostrf(temperature, 3, 1, textB));
-    oled->setTextSize(1);
+    oled->setTextSize(2);
     oled->setCursor(0, 50);
     oled->print(text);
 
     sprintf(text, "%s%%", dtostrf(humidity, 3, 0, textB));
-    oled->setCursor(103, 50);
+    oled->setCursor(80, 50);
     oled->print(text);
 
     oled->display();
