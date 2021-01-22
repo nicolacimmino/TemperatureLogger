@@ -222,11 +222,11 @@ void plotTemperature()
         maxTemp = 30;
     }
 
-    uint8_t hTick = max(abs((maxTemp - minTemp) / 3), 1);
+    uint8_t vTick = max(abs((maxTemp - minTemp) / 3), 2);
 
     for (uint8_t ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += 4)
     {
-        for (int8_t t = minTemp; t <= maxTemp; t += hTick)
+        for (int8_t t = minTemp; t <= maxTemp; t += vTick)
         {
             oled->drawPixel(ix, temperatrureToYOffset(t, minTemp, maxTemp), SSD1306_WHITE);
             oled->setCursor(0, temperatrureToYOffset(t, minTemp, maxTemp) - (2 + (t == maxTemp ? -3 : 0)));
