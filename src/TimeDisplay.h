@@ -10,8 +10,7 @@ private:
     uRTCLib *rtc;
     void displayTime();
 
-public:
-    TimeDisplay(Adafruit_SSD1306 *oled, uRTCLib *rtc);
+public:    
     void loop();
     void onBClick();
 };

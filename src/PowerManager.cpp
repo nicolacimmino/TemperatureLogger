@@ -4,7 +4,6 @@
 unsigned long PowerManager::lastUserInteractionTime = millis();
 uint8_t PowerManager::level = PS_LEVEL_0;
 uint8_t PowerManager::previousLevel = PS_LEVEL_0;
-Adafruit_SSD1306 *PowerManager::oled;
 
 void PowerManager::enterL0()
 {
@@ -12,7 +11,7 @@ void PowerManager::enterL0()
 
     digitalWrite(PIN_PWR_AUX_DEVS, HIGH);
     delay(PS_BUS_GUARD_TIME_MS);
-    PowerManager::oled->ssd1306_command(SSD1306_DISPLAYON);
+    Peripherals::oled->ssd1306_command(SSD1306_DISPLAYON);
 
     level = PS_LEVEL_0;
 }
@@ -32,7 +31,7 @@ void PowerManager::enterL2()
 {
     previousLevel = level;
 
-    PowerManager::oled->ssd1306_command(SSD1306_DISPLAYOFF);
+    Peripherals::oled->ssd1306_command(SSD1306_DISPLAYOFF);
     digitalWrite(PIN_PWR_AUX_DEVS, LOW);
 
     level = PS_LEVEL_2;

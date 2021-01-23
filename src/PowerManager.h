@@ -2,8 +2,8 @@
 #define __TEMPERATURE_POWERMANAGER_H__
 
 #include <Arduino.h>
-#include <Adafruit_SSD1306.h>
 #include "config.h"
+#include "Peripherals.h"
 
 // L0   Fully operational (display ON, perhipherals on)
 // L1   Background activity (display OFF, perhipherals on)
@@ -27,7 +27,6 @@ private:
 
 public:
     static uint8_t level;
-    static Adafruit_SSD1306 *oled;
 
     static void enterL0();
     static void enterL1();

@@ -30,14 +30,9 @@
 #include "src/Button.h"
 #include "src/TimeDisplay.h"
 #include "src/TemperatureDisplay.h"
+#include "src/Peripherals.h"
 
-uRTCLib *rtc;
-Adafruit_SSD1306 *oled;
-uEEPROMLib *eeprom;
 Display *currentDisplay = NULL;
-Button *buttonA;
-Button *buttonB;
-
 uint8_t mode = 0;
 
 void recordData()
@@ -58,10 +53,10 @@ void recordData()
 
     uint8_t temperatureEncoded = 127 + (SHT2x.GetTemperature() * 2);
 
-    uint8_t logPtr = eeprom->eeprom_read(EEPROM_LOG_PTR);
-    eeprom->eeprom_write(EEPROM_T_LOG_BASE + logPtr, temperatureEncoded);
+    uint8_t logPtr = Peripherals::eeprom->eeprom_read(EEPROM_LOG_PTR);
+    Peripherals::eeprom->eeprom_write(EEPROM_T_LOG_BASE + logPtr, temperatureEncoded);
     logPtr = (logPtr + 1) % LOG_LENGTH_BYTES;
-    eeprom->eeprom_write(EEPROM_LOG_PTR, logPtr);
+    Peripherals::eeprom->eeprom_write(EEPROM_LOG_PTR, logPtr);
 
     Status::replotNeeded = true;
 
@@ -82,10 +77,10 @@ void enterMode()
     switch (mode)
     {
     case 0:
-        currentDisplay = new TimeDisplay(oled, rtc);
+        currentDisplay = new TimeDisplay();
         break;
     case 1:
-        currentDisplay = new TemperatureDisplay(oled, eeprom);
+        currentDisplay = new TemperatureDisplay();
         break;
     }
 }
@@ -130,28 +125,26 @@ void setup()
 
     Wire.begin();
 
-    rtc = new uRTCLib(0x68);
+    Peripherals::rtc = new uRTCLib(0x68);
 
-    DCServices *dcServices = new DCServices(DC_RADIO_NRF24_V2, rtc);
+    DCServices *dcServices = new DCServices(DC_RADIO_NRF24_V2, Peripherals::rtc);
     if (dcServices->syncRTCToTimeBroadcast())
     {
         Status::timeSynced();
     }
     delete dcServices;
 
-    eeprom = new uEEPROMLib(0x57);
+    Peripherals::eeprom = new uEEPROMLib(0x57);
 
-    buttonA = new Button(PIN_BUTTON_A);
-    buttonA->registerOnClickCallback(onButtonAClick);
-    buttonB = new Button(PIN_BUTTON_B);
-    buttonB->registerOnClickCallback(onButtonBClick);
+    Peripherals::buttonA = new Button(PIN_BUTTON_A);
+    Peripherals::buttonA->registerOnClickCallback(onButtonAClick);
+    Peripherals::buttonB = new Button(PIN_BUTTON_B);
+    Peripherals::buttonB->registerOnClickCallback(onButtonBClick);
 
-    oled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
-    oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);
-    oled->clearDisplay();
-    oled->display();
-
-    PowerManager::oled = oled;
+    Peripherals::oled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+    Peripherals::oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);
+    Peripherals::oled->clearDisplay();
+    Peripherals::oled->display();
 
     enterMode();
 }
@@ -160,7 +153,7 @@ void loop()
 {
     PowerManager::loop();
     recordData();
-    buttonA->loop();
-    buttonB->loop();
+    Peripherals::buttonA->loop();
+    Peripherals::buttonB->loop();
     currentDisplay->loop();
 }

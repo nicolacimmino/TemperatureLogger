@@ -14,8 +14,7 @@ private:
     uint8_t plotIndexToXOffset(uint8_t ix);
     void plotTemperature();
 
-public:
-    TemperatureDisplay(Adafruit_SSD1306 *oled, uEEPROMLib *eeprom);
+public:    
     void loop();
     void onBClick();
 };

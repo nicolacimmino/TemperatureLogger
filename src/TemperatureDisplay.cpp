@@ -1,10 +1,5 @@
 #include "TemperatureDisplay.h"
 
-TemperatureDisplay::TemperatureDisplay(Adafruit_SSD1306 *oled, uEEPROMLib *eeprom) : Display(oled)
-{
-    this->eeprom = eeprom;
-}
-
 void TemperatureDisplay::onBClick()
 {
     this->plotAutoscale = !this->plotAutoscale;
@@ -42,12 +37,12 @@ void TemperatureDisplay::plotTemperature()
 
     clearDisplay();
 
-    this->oled->setCursor(0, 5);
-    this->oled->print("BUSY....");
-    this->oled->display();
+    Peripherals::oled->setCursor(0, 5);
+    Peripherals::oled->print("BUSY....");
+    Peripherals::oled->display();
 
-    this->oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_RIGHT, PLOT_Y_BOTTOM, SSD1306_WHITE);
-    this->oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_LEFT, PLOT_Y_TOP, SSD1306_WHITE);
+    Peripherals::oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_RIGHT, PLOT_Y_BOTTOM, SSD1306_WHITE);
+    Peripherals::oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_LEFT, PLOT_Y_TOP, SSD1306_WHITE);
 
     int8_t minTemp = 100;
     int8_t maxTemp = -100;
@@ -56,7 +51,7 @@ void TemperatureDisplay::plotTemperature()
     {
         for (int ix = LOG_LENGTH_BYTES - 1; ix > 0; ix--)
         {
-            int8_t temperature = (this->eeprom->eeprom_read(EEPROM_T_LOG_BASE + ix) - 127) / 2;
+            int8_t temperature = (Peripherals::eeprom->eeprom_read(EEPROM_T_LOG_BASE + ix) - 127) / 2;
             minTemp = min(minTemp, temperature);
             maxTemp = max(maxTemp, temperature);
         }
@@ -73,22 +68,22 @@ void TemperatureDisplay::plotTemperature()
     {
         for (int8_t t = minTemp; t <= maxTemp; t += vTick)
         {
-            this->oled->drawPixel(ix, temperatrureToYOffset(t, minTemp, maxTemp), SSD1306_WHITE);
-            this->oled->setCursor(0, temperatrureToYOffset(t, minTemp, maxTemp) - (2 + (t == maxTemp ? -3 : 0)));
-            this->oled->print(t);
+            Peripherals::oled->drawPixel(ix, temperatrureToYOffset(t, minTemp, maxTemp), SSD1306_WHITE);
+            Peripherals::oled->setCursor(0, temperatrureToYOffset(t, minTemp, maxTemp) - (2 + (t == maxTemp ? -3 : 0)));
+            Peripherals::oled->print(t);
         }
     }
 
     for (int ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += PLOT_X_PIXELS / 12)
     {
-        this->oled->drawLine(ix, PLOT_Y_BOTTOM - 1, ix, PLOT_Y_BOTTOM + 1, SSD1306_WHITE);
+        Peripherals::oled->drawLine(ix, PLOT_Y_BOTTOM - 1, ix, PLOT_Y_BOTTOM + 1, SSD1306_WHITE);
     }
 
-    this->oled->display();
+    Peripherals::oled->display();
 
     float temperaturePointA = 0;
 
-    uint16_t logPtr = this->eeprom->eeprom_read(EEPROM_LOG_PTR);
+    uint16_t logPtr = Peripherals::eeprom->eeprom_read(EEPROM_LOG_PTR);
 
     bool overflow = false;
 
@@ -96,7 +91,7 @@ void TemperatureDisplay::plotTemperature()
     {
         uint8_t readingPointer = (logPtr + ix) % LOG_LENGTH_BYTES;
 
-        float temperaturePointB = (this->eeprom->eeprom_read(EEPROM_T_LOG_BASE + readingPointer) - 127) / 2;
+        float temperaturePointB = (Peripherals::eeprom->eeprom_read(EEPROM_T_LOG_BASE + readingPointer) - 127) / 2;
 
         if (ix == LOG_LENGTH_BYTES - 1)
         {
@@ -104,11 +99,11 @@ void TemperatureDisplay::plotTemperature()
             continue;
         }
 
-        this->oled->drawLine(plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointA, minTemp, maxTemp), plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointB, minTemp, maxTemp), SSD1306_WHITE);
+        Peripherals::oled->drawLine(plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointA, minTemp, maxTemp), plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointB, minTemp, maxTemp), SSD1306_WHITE);
 
         if (ix % 10 == 0)
         {
-            this->oled->display();
+            Peripherals::oled->display();
         }
 
         if (temperaturePointA > maxTemp || temperaturePointA < minTemp)
@@ -119,15 +114,15 @@ void TemperatureDisplay::plotTemperature()
         temperaturePointA = temperaturePointB;
     }
 
-    this->oled->fillRect(0, 5, 50, 10, SSD1306_BLACK);
+    Peripherals::oled->fillRect(0, 5, 50, 10, SSD1306_BLACK);
 
     if (overflow)
     {
-        this->oled->setCursor(0, 5);
-        this->oled->print("OVFL");
+        Peripherals::oled->setCursor(0, 5);
+        Peripherals::oled->print("OVFL");
     }
 
-    this->oled->display();
+    Peripherals::oled->display();
 
     Status::replotNeeded = false;
 }
