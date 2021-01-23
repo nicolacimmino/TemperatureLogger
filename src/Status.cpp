@@ -2,17 +2,19 @@
 
 unsigned long Status::lastTimeSync = 0;
 
- bool Status::isTimeSynced()
+bool Status::replotNeeded = true;
+
+bool Status::isTimeSynced()
 {
     return (lastTimeSync > 0) && (millis() - lastTimeSync) < 86400000;
 }
 
- void Status::timeSynced()
+void Status::timeSynced()
 {
     lastTimeSync = millis();
 }
 
- uint8_t Status::getBatteryLevel()
+uint8_t Status::getBatteryLevel()
 {
     static uint8_t batteryLevel = 0;
     static unsigned long lastMeasurementTime = 0;

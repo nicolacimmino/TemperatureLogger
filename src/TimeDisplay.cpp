@@ -5,6 +5,11 @@ TimeDisplay::TimeDisplay(Adafruit_SSD1306 *oled, uRTCLib *rtc) : Display(oled)
     this->rtc = rtc;
 }
 
+void TimeDisplay::onBClick()
+{
+    // Do nothing
+}
+
 void TimeDisplay::loop()
 {
     if (PowerManager::level != PS_LEVEL_0)

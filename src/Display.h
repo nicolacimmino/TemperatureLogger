@@ -24,6 +24,7 @@ protected:
 public:
     Display(Adafruit_SSD1306 *oled);
     virtual void loop() = 0;
+    virtual void onBClick() = 0;
 };
 
 #endif

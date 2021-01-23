@@ -13,6 +13,7 @@ private:
 public:
     TimeDisplay(Adafruit_SSD1306 *oled, uRTCLib *rtc);
     void loop();
+    void onBClick();
 };
 
 #endif
