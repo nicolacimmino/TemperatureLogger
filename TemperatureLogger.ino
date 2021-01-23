@@ -27,6 +27,7 @@
 #include <Sodaq_SHT2x.h>
 #include <DCServices.h>
 
+#include "src/Button.h"
 #include "src/TimeDisplay.h"
 #include "src/TemperatureDisplay.h"
 
@@ -34,6 +35,8 @@ uRTCLib *rtc;
 Adafruit_SSD1306 *oled;
 uEEPROMLib *eeprom;
 Display *currentDisplay = NULL;
+Button *buttonA;
+Button *buttonB;
 
 uint8_t mode = 0;
 
@@ -68,39 +71,6 @@ void recordData()
     }
 }
 
-void setup()
-{
-    Serial.begin(9600);
-
-    pinMode(PIN_PWR_AUX_DEVS, OUTPUT);
-    digitalWrite(PIN_PWR_AUX_DEVS, HIGH);
-
-    Wire.begin();
-
-    rtc = new uRTCLib(0x68);
-
-    DCServices *dcServices = new DCServices(DC_RADIO_NRF24_V2, rtc);
-    if (dcServices->syncRTCToTimeBroadcast())
-    {
-        Status::timeSynced();
-    }
-    delete dcServices;
-
-    eeprom = new uEEPROMLib(0x57);
-
-    pinMode(PIN_BUTTON_A, INPUT_PULLUP);
-    pinMode(PIN_BUTTON_B, INPUT_PULLUP);
-
-    oled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
-    oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);
-    oled->clearDisplay();
-    oled->display();
-
-    PowerManager::oled = oled;
-
-    enterMode();
-}
-
 void enterMode()
 {
 
@@ -125,55 +95,72 @@ void changeMode()
     mode = (mode + 1) % DISPLAY_MODES;
     enterMode();
 }
-
-void checkButtonA()
+void onButtonAClick()
 {
-    if (digitalRead(PIN_BUTTON_A) == LOW)
+    if (PowerManager::level == PS_LEVEL_0)
     {
-        if (PowerManager::level == PS_LEVEL_0)
-        {
-            changeMode();
-        }
-
-        PowerManager::onUserInteratcion();
-
-        Status::replotNeeded = true;
-        currentDisplay->loop();
-
-        while (digitalRead(PIN_BUTTON_A) == LOW)
-        {
-            delay(1);
-        }
+        changeMode();
     }
+
+    PowerManager::onUserInteratcion();
+
+    Status::replotNeeded = true;
+    currentDisplay->loop();
 }
 
-void checkButtonB()
+void onButtonBClick()
 {
-    if (digitalRead(PIN_BUTTON_B) == LOW)
+    if (PowerManager::level == PS_LEVEL_0)
     {
-        if (PowerManager::level == PS_LEVEL_0)
-        {
-            currentDisplay->onBClick();
-        }
-
-        PowerManager::onUserInteratcion();
-
-        Status::replotNeeded = true;
-        currentDisplay->loop();
-
-        while (digitalRead(PIN_BUTTON_B) == LOW)
-        {
-            delay(1);
-        }
+        currentDisplay->onBClick();
     }
+
+    PowerManager::onUserInteratcion();
+
+    Status::replotNeeded = true;
+    currentDisplay->loop();
+}
+
+void setup()
+{
+    Serial.begin(9600);
+
+    pinMode(PIN_PWR_AUX_DEVS, OUTPUT);
+    digitalWrite(PIN_PWR_AUX_DEVS, HIGH);
+
+    Wire.begin();
+
+    rtc = new uRTCLib(0x68);
+
+    DCServices *dcServices = new DCServices(DC_RADIO_NRF24_V2, rtc);
+    if (dcServices->syncRTCToTimeBroadcast())
+    {
+        Status::timeSynced();
+    }
+    delete dcServices;
+
+    eeprom = new uEEPROMLib(0x57);
+
+    buttonA = new Button(PIN_BUTTON_A);
+    buttonA->registerOnClickCallback(onButtonAClick);
+    buttonB = new Button(PIN_BUTTON_B);
+    buttonB->registerOnClickCallback(onButtonBClick);
+
+    oled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+    oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);
+    oled->clearDisplay();
+    oled->display();
+
+    PowerManager::oled = oled;
+
+    enterMode();
 }
 
 void loop()
 {
     PowerManager::loop();
     recordData();
-    checkButtonA();
-    checkButtonB();
-
+    buttonA->loop();
+    buttonB->loop();
     currentDisplay->loop();
 }
