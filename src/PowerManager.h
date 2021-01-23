@@ -21,87 +21,20 @@
 
 class PowerManager
 {
+private:
+    static unsigned long lastUserInteractionTime;
+    static uint8_t previousLevel;
+
 public:
-static unsigned long lastUserInteractionTime;
-static uint8_t level;
-static uint8_t previousLevel;
-static Adafruit_SSD1306 *oled;
+    static uint8_t level;
+    static Adafruit_SSD1306 *oled;
 
-static void enterL0()
-{
-    previousLevel = level;
-
-    digitalWrite(PIN_PWR_AUX_DEVS, HIGH);
-    delay(PS_BUS_GUARD_TIME_MS);
-    PowerManager::oled->ssd1306_command(SSD1306_DISPLAYON);
-
-    level = PS_LEVEL_0;
-}
-
-static void enterL1()
-{
-    previousLevel = level;
-
-    digitalWrite(PIN_PWR_AUX_DEVS, HIGH);
-    delay(PS_BUS_GUARD_TIME_MS);
-
-    level = PS_LEVEL_1;
-    //
-}
-
-static void enterL2()
-{
-    previousLevel = level;
-
-    PowerManager::oled->ssd1306_command(SSD1306_DISPLAYOFF);
-    digitalWrite(PIN_PWR_AUX_DEVS, LOW);
-
-    level = PS_LEVEL_2;
-    //
-}
-
-static void loop()
-{
-    if (level > PS_LEVEL_0)
-    {
-        return;
-    }
-
-    if (millis() - lastUserInteractionTime > POWER_SAVE_TIMEOUT_MS)
-    {
-        enterL2();
-    }
-}
-
-static void onUserInteratcion()
-{
-    lastUserInteractionTime = millis();
-
-    if (level != PS_LEVEL_0)
-    {
-        enterL0();
-    }
-}
-
-static void restoreLevel()
-{
-    if (previousLevel != level)
-    {
-        switch (previousLevel)
-        {
-        case (PS_LEVEL_0):
-            enterL0();
-            break;
-        case (PS_LEVEL_1):
-            enterL1();
-            break;
-        case (PS_LEVEL_2):
-            enterL2();
-            break;
-        }
-    }
-}
-
-}; // namespace PowerManager
+    static void enterL0();
+    static void enterL1();
+    static void enterL2();
+    static void loop();
+    static void onUserInteratcion();
+    static void restoreLevel();
+};
 
 #endif
