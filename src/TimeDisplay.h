@@ -12,7 +12,7 @@ private:
 
 public:    
     void loop();
-    void onBClick();
+    void onBClick();    
 };
 
 #endif

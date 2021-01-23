@@ -58,7 +58,7 @@ void recordData()
     logPtr = (logPtr + 1) % LOG_LENGTH_BYTES;
     Peripherals::eeprom->eeprom_write(EEPROM_LOG_PTR, logPtr);
 
-    Status::replotNeeded = true;
+    currentDisplay->onDisplayInvalidated();
 
     if (restoreLevel)
     {
@@ -99,7 +99,7 @@ void onButtonAClick()
 
     PowerManager::onUserInteratcion();
 
-    Status::replotNeeded = true;
+    currentDisplay->onDisplayInvalidated();
     currentDisplay->loop();
 }
 
@@ -112,7 +112,7 @@ void onButtonBClick()
 
     PowerManager::onUserInteratcion();
 
-    Status::replotNeeded = true;
+    currentDisplay->onDisplayInvalidated();
     currentDisplay->loop();
 }
 

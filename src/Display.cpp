@@ -1,5 +1,10 @@
 #include "Display.h"
 
+void Display::onDisplayInvalidated()
+{
+    this->replotNeeded = true;
+}
+
 void Display::clearDisplay()
 {
     Peripherals::oled->clearDisplay();

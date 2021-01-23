@@ -14,10 +14,12 @@ private:
 protected:
     void clearDisplay();
     void plotBatterLevel();
-
+    bool replotNeeded = true;
+    
 public:
     virtual void loop() = 0;
     virtual void onBClick() = 0;
+    void onDisplayInvalidated();
 };
 
 #endif

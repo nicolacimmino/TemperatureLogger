@@ -11,8 +11,7 @@ private:
 public:
     static bool isTimeSynced();
     static void timeSynced();
-    static uint8_t getBatteryLevel();
-    static bool replotNeeded;
+    static uint8_t getBatteryLevel();    
 };
 
 #endif

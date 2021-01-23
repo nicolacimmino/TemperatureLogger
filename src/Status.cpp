@@ -2,8 +2,6 @@
 
 unsigned long Status::lastTimeSync = 0;
 
-bool Status::replotNeeded = true;
-
 bool Status::isTimeSynced()
 {
     return (lastTimeSync > 0) && (millis() - lastTimeSync) < 86400000;

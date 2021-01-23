@@ -30,7 +30,7 @@ uint8_t TemperatureDisplay::plotIndexToXOffset(uint8_t ix)
 
 void TemperatureDisplay::plotTemperature()
 {
-    if (!Status::replotNeeded)
+    if (!this->replotNeeded)
     {
         return;
     }
@@ -124,5 +124,5 @@ void TemperatureDisplay::plotTemperature()
 
     Peripherals::oled->display();
 
-    Status::replotNeeded = false;
+    this->replotNeeded = false;
 }
