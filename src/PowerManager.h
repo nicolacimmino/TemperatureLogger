@@ -1,7 +1,9 @@
 #ifndef __TEMPERATURE_POWERMANAGER_H__
 #define __TEMPERATURE_POWERMANAGER_H__
 
-extern Adafruit_SSD1306 *oled;
+#include <Arduino.h>
+#include <Adafruit_SSD1306.h>
+#include "config.h"
 
 // L0   Fully operational (display ON, perhipherals on)
 // L1   Background activity (display OFF, perhipherals on)
@@ -17,25 +19,26 @@ extern Adafruit_SSD1306 *oled;
 // accessing the bus.
 #define PS_BUS_GUARD_TIME_MS 100
 
-namespace PowerManager
+class PowerManager
 {
+public:
+static unsigned long lastUserInteractionTime;
+static uint8_t level;
+static uint8_t previousLevel;
+static Adafruit_SSD1306 *oled;
 
-unsigned long lastUserInteractionTime = millis();
-uint8_t level = PS_LEVEL_0;
-uint8_t previousLevel = PS_LEVEL_0;
-
-void enterL0()
+static void enterL0()
 {
     previousLevel = level;
 
     digitalWrite(PIN_PWR_AUX_DEVS, HIGH);
     delay(PS_BUS_GUARD_TIME_MS);
-    oled->ssd1306_command(SSD1306_DISPLAYON);
+    PowerManager::oled->ssd1306_command(SSD1306_DISPLAYON);
 
     level = PS_LEVEL_0;
 }
 
-void enterL1()
+static void enterL1()
 {
     previousLevel = level;
 
@@ -46,18 +49,18 @@ void enterL1()
     //
 }
 
-void enterL2()
+static void enterL2()
 {
     previousLevel = level;
 
-    oled->ssd1306_command(SSD1306_DISPLAYOFF);
+    PowerManager::oled->ssd1306_command(SSD1306_DISPLAYOFF);
     digitalWrite(PIN_PWR_AUX_DEVS, LOW);
 
     level = PS_LEVEL_2;
     //
 }
 
-void loop()
+static void loop()
 {
     if (level > PS_LEVEL_0)
     {
@@ -70,7 +73,7 @@ void loop()
     }
 }
 
-void onUserInteratcion()
+static void onUserInteratcion()
 {
     lastUserInteractionTime = millis();
 
@@ -80,7 +83,7 @@ void onUserInteratcion()
     }
 }
 
-void restoreLevel()
+static void restoreLevel()
 {
     if (previousLevel != level)
     {
@@ -98,6 +101,7 @@ void restoreLevel()
         }
     }
 }
+
 }; // namespace PowerManager
 
 #endif

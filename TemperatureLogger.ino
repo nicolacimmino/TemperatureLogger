@@ -25,127 +25,25 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Sodaq_SHT2x.h>
-
-#include "config.h"
-#include "ui.h"
-#include "powerManager.h"
 #include <DCServices.h>
 
-DCServices *dcServices;
+// #include "src/config.h"
+// #include "src/ui.h"
+// #include "src/PowerManager.h"
+// #include "src/Status.h"
+#include "src/TimeDisplay.h"
+
 uRTCLib *rtc;
 Adafruit_SSD1306 *oled;
 uEEPROMLib *eeprom;
+Display *currentDisplay;
 
 uint8_t mode = 0;
 bool plotAutoscale = false;
 bool replotNeeded = true;
-unsigned long lastTimeSync = 0;
-
-bool isTimeSynced()
-{
-    return (lastTimeSync > 0) && (millis() - lastTimeSync) < 86400000;
-}
-
-uint8_t getBatteryLevel()
-{
-    static uint8_t batteryLevel = 0;
-    static unsigned long lastMeasurementTime = 0;
-
-    if (batteryLevel != 0 && millis() - lastMeasurementTime < 1000)
-    {
-        return batteryLevel;
-    }
-
-    lastMeasurementTime = millis();
-
-    // See this article for an in-depth explanation.
-    // https://provideyourown.com/2012/secret-arduino-voltmeter-measure-battery-voltage/
-    // tl;dr: we switch the ADC to measure the internal 1.1v reference using Vcc as reference, the rest is simple math.
-
-    ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
-
-    delay(2);
-    ADCSRA |= _BV(ADSC);
-    while (bit_is_set(ADCSRA, ADSC))
-        ;
-
-    long measuredVcc = 1125300L / (ADCL | (ADCH << 8));
-    analogReference(DEFAULT);
-
-    // We assume 3900mV max and 2900 being the safe discharge level. 3900-2900 => 1000
-    // 1000 / 10 => 100 (%).
-    uint8_t measuredLevel = min(max((measuredVcc - 2900) / 10, 0), 100);
-
-    // Init the IIR filter with the first sample otherwise the % indicator will ramp up slowly at power on.
-    if (batteryLevel == 0)
-    {
-        batteryLevel = measuredLevel;
-    }
-
-    batteryLevel = (0.9 * (float)batteryLevel) + (0.1 * (float)measuredLevel);
-
-    return batteryLevel;
-}
-
-void displayBatterLevel()
-{
-    uint8_t batteryLevel = getBatteryLevel();
-    oled->setCursor(80, 5);
-    oled->print(batteryLevel);
-    oled->print("%");
-
-    oled->drawBitmap(110, 5, batteryLogo[round(batteryLevel / 25.0)], BATTERY_LOGO_W, BATTERY_LOGO_H, SSD1306_WHITE);
-}
-
-void clearDisplay()
-{
-    oled->clearDisplay();
-    oled->setTextSize(1);
-    oled->setTextColor(SSD1306_WHITE);
-    displayBatterLevel();
-}
-
-void displayTime()
-{
-    char text[16];
-    char textB[6];
-
-    rtc->refresh();
-
-    clearDisplay();
-
-    sprintf(text, "%02i:%02i", rtc->hour(), rtc->minute());
-    oled->setTextSize(3);
-    oled->setCursor(18, 21);
-    oled->print(text);
-
-    sprintf(text, "%02i", rtc->second());
-    oled->setCursor(110, 35);
-    oled->setTextSize(1);
-    oled->print(text);
-
-    float temperature = (SHT2x.GetTemperature() * 10) / 10.0;
-    float humidity = round(SHT2x.GetHumidity());
-
-    sprintf(text, "%sC", dtostrf(temperature, 3, 1, textB));
-    oled->setTextSize(2);
-    oled->setCursor(0, 50);
-    oled->print(text);
-
-    sprintf(text, "%s%%", dtostrf(humidity, 3, 0, textB));
-    oled->setCursor(80, 50);
-    oled->print(text);
-
-    if (isTimeSynced())
-    {
-        oled->drawBitmap(110, 22, timeSyncLogo, TIME_SYNC_LOGO_W, TIME_SYNC_LOGO_H, SSD1306_WHITE);
-    }
-
-    oled->display();
-}
 
 void recordData()
-{
+{    
     static unsigned long lastRecord = millis();
     if (millis() - lastRecord < RECORD_DATA_INTERVAL_MS)
     {
@@ -175,117 +73,117 @@ void recordData()
     }
 }
 
-uint8_t temperatrureToYOffset(float temperature, int8_t minTemp, int8_t maxTemp)
-{
-    temperature = max(min(maxTemp, temperature), minTemp);
-    return PLOT_Y_TOP + PLOT_Y_PIXELS - floor((PLOT_Y_PIXELS * (temperature - minTemp)) / (maxTemp - minTemp));
-}
+// uint8_t temperatrureToYOffset(float temperature, int8_t minTemp, int8_t maxTemp)
+// {
+//     temperature = max(min(maxTemp, temperature), minTemp);
+//     return PLOT_Y_TOP + PLOT_Y_PIXELS - floor((PLOT_Y_PIXELS * (temperature - minTemp)) / (maxTemp - minTemp));
+// }
 
-uint8_t plotIndexToXOffset(uint8_t ix)
-{
-    // This is simplified as the RAM shadow of the log is on purpose as
-    // many points as the plot pixels.
-    return ix + PLOT_X_LEFT;
-}
+// uint8_t plotIndexToXOffset(uint8_t ix)
+// {
+//     // This is simplified as the RAM shadow of the log is on purpose as
+//     // many points as the plot pixels.
+//     return ix + PLOT_X_LEFT;
+// }
 
-void plotTemperature()
-{
-    if (!replotNeeded)
-    {
-        return;
-    }
+// void plotTemperature()
+// {
+//     if (!replotNeeded)
+//     {
+//         return;
+//     }
 
-    clearDisplay();
+//     clearDisplay();
 
-    oled->setCursor(0, 5);
-    oled->print("BUSY....");
-    oled->display();
+//     oled->setCursor(0, 5);
+//     oled->print("BUSY....");
+//     oled->display();
 
-    oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_RIGHT, PLOT_Y_BOTTOM, SSD1306_WHITE);
-    oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_LEFT, PLOT_Y_TOP, SSD1306_WHITE);
+//     oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_RIGHT, PLOT_Y_BOTTOM, SSD1306_WHITE);
+//     oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_LEFT, PLOT_Y_TOP, SSD1306_WHITE);
 
-    int8_t minTemp = 100;
-    int8_t maxTemp = -100;
+//     int8_t minTemp = 100;
+//     int8_t maxTemp = -100;
 
-    if (plotAutoscale)
-    {
-        for (int ix = LOG_LENGTH_BYTES - 1; ix > 0; ix--)
-        {
-            int8_t temperature = (eeprom->eeprom_read(EEPROM_T_LOG_BASE + ix) - 127) / 2;
-            minTemp = min(minTemp, temperature);
-            maxTemp = max(maxTemp, temperature);
-        }
-    }
-    else
-    {
-        minTemp = 15;
-        maxTemp = 30;
-    }
+//     if (plotAutoscale)
+//     {
+//         for (int ix = LOG_LENGTH_BYTES - 1; ix > 0; ix--)
+//         {
+//             int8_t temperature = (eeprom->eeprom_read(EEPROM_T_LOG_BASE + ix) - 127) / 2;
+//             minTemp = min(minTemp, temperature);
+//             maxTemp = max(maxTemp, temperature);
+//         }
+//     }
+//     else
+//     {
+//         minTemp = 15;
+//         maxTemp = 30;
+//     }
 
-    uint8_t vTick = max(abs((maxTemp - minTemp) / 3), 2);
+//     uint8_t vTick = max(abs((maxTemp - minTemp) / 3), 2);
 
-    for (uint8_t ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += 4)
-    {
-        for (int8_t t = minTemp; t <= maxTemp; t += vTick)
-        {
-            oled->drawPixel(ix, temperatrureToYOffset(t, minTemp, maxTemp), SSD1306_WHITE);
-            oled->setCursor(0, temperatrureToYOffset(t, minTemp, maxTemp) - (2 + (t == maxTemp ? -3 : 0)));
-            oled->print(t);
-        }
-    }
+//     for (uint8_t ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += 4)
+//     {
+//         for (int8_t t = minTemp; t <= maxTemp; t += vTick)
+//         {
+//             oled->drawPixel(ix, temperatrureToYOffset(t, minTemp, maxTemp), SSD1306_WHITE);
+//             oled->setCursor(0, temperatrureToYOffset(t, minTemp, maxTemp) - (2 + (t == maxTemp ? -3 : 0)));
+//             oled->print(t);
+//         }
+//     }
 
-    for (int ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += PLOT_X_PIXELS / 12)
-    {
-        oled->drawLine(ix, PLOT_Y_BOTTOM - 1, ix, PLOT_Y_BOTTOM + 1, SSD1306_WHITE);
-    }
+//     for (int ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += PLOT_X_PIXELS / 12)
+//     {
+//         oled->drawLine(ix, PLOT_Y_BOTTOM - 1, ix, PLOT_Y_BOTTOM + 1, SSD1306_WHITE);
+//     }
 
-    oled->display();
+//     oled->display();
 
-    float temperaturePointA = 0;
+//     float temperaturePointA = 0;
 
-    uint16_t logPtr = eeprom->eeprom_read(EEPROM_LOG_PTR);
+//     uint16_t logPtr = eeprom->eeprom_read(EEPROM_LOG_PTR);
 
-    bool overflow = false;
+//     bool overflow = false;
 
-    for (int ix = LOG_LENGTH_BYTES - 1; ix > 0; ix--)
-    {
-        uint8_t readingPointer = (logPtr + ix) % LOG_LENGTH_BYTES;
+//     for (int ix = LOG_LENGTH_BYTES - 1; ix > 0; ix--)
+//     {
+//         uint8_t readingPointer = (logPtr + ix) % LOG_LENGTH_BYTES;
 
-        float temperaturePointB = (eeprom->eeprom_read(EEPROM_T_LOG_BASE + readingPointer) - 127) / 2;
+//         float temperaturePointB = (eeprom->eeprom_read(EEPROM_T_LOG_BASE + readingPointer) - 127) / 2;
 
-        if (ix == LOG_LENGTH_BYTES - 1)
-        {
-            temperaturePointA = temperaturePointB;
-            continue;
-        }
+//         if (ix == LOG_LENGTH_BYTES - 1)
+//         {
+//             temperaturePointA = temperaturePointB;
+//             continue;
+//         }
 
-        oled->drawLine(plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointA, minTemp, maxTemp), plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointB, minTemp, maxTemp), SSD1306_WHITE);
+//         oled->drawLine(plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointA, minTemp, maxTemp), plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointB, minTemp, maxTemp), SSD1306_WHITE);
 
-        if (ix % 10 == 0)
-        {
-            oled->display();
-        }
+//         if (ix % 10 == 0)
+//         {
+//             oled->display();
+//         }
 
-        if (temperaturePointA > maxTemp || temperaturePointA < minTemp)
-        {
-            overflow = true;
-        }
+//         if (temperaturePointA > maxTemp || temperaturePointA < minTemp)
+//         {
+//             overflow = true;
+//         }
 
-        temperaturePointA = temperaturePointB;
-    }
+//         temperaturePointA = temperaturePointB;
+//     }
 
-    oled->fillRect(0, 5, 50, 10, SSD1306_BLACK);
+//     oled->fillRect(0, 5, 50, 10, SSD1306_BLACK);
 
-    if (overflow)
-    {
-        oled->setCursor(0, 5);
-        oled->print("OVFL");
-    }
+//     if (overflow)
+//     {
+//         oled->setCursor(0, 5);
+//         oled->print("OVFL");
+//     }
 
-    oled->display();
+//     oled->display();
 
-    replotNeeded = false;
-}
+//     replotNeeded = false;
+// }
 
 void setup()
 {
@@ -298,11 +196,12 @@ void setup()
 
     rtc = new uRTCLib(0x68);
 
-    dcServices = new DCServices(DC_RADIO_NRF24_V2, rtc);
+    DCServices *dcServices = new DCServices(DC_RADIO_NRF24_V2, rtc);
     if (dcServices->syncRTCToTimeBroadcast())
     {
-        lastTimeSync = millis();
+        Status::timeSynced();
     }
+    delete dcServices;
 
     eeprom = new uEEPROMLib(0x57);
 
@@ -313,6 +212,10 @@ void setup()
     oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);
     oled->clearDisplay();
     oled->display();
+
+    PowerManager::oled = oled;
+    
+    currentDisplay = new TimeDisplay(oled, rtc);
 }
 
 void checkButtonA()
@@ -328,7 +231,7 @@ void checkButtonA()
 
         replotNeeded = true;
         plotAutoscale = false;
-        serveScreen();
+        currentDisplay->loop();
 
         while (digitalRead(PIN_BUTTON_A) == LOW)
         {
@@ -349,25 +252,12 @@ void checkButtonB()
         PowerManager::onUserInteratcion();
 
         replotNeeded = true;
-        serveScreen();
+        currentDisplay->loop();
 
         while (digitalRead(PIN_BUTTON_B) == LOW)
         {
             delay(1);
         }
-    }
-}
-
-void serveScreen()
-{
-    switch (mode)
-    {
-    case 0:
-        displayTime();
-        break;
-    case 1:
-        plotTemperature();
-        break;
     }
 }
 
@@ -378,10 +268,5 @@ void loop()
     checkButtonA();
     checkButtonB();
 
-    if (PowerManager::level != PS_LEVEL_0)
-    {
-        return;
-    }
-
-    serveScreen();
+    currentDisplay->loop();
 }
