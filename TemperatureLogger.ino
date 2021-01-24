@@ -159,5 +159,12 @@ void loop()
     recordData();
     Peripherals::buttonA->loop();
     Peripherals::buttonB->loop();
+
+    if (Status::abortLoop)
+    {
+        Status::abortLoop = false;
+        return;
+    }
+
     currentDisplay->loop();
 }

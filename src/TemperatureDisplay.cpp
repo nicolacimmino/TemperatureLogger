@@ -44,13 +44,24 @@ void TemperatureDisplay::plotTemperature()
     Peripherals::oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_RIGHT, PLOT_Y_BOTTOM, SSD1306_WHITE);
     Peripherals::oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_LEFT, PLOT_Y_TOP, SSD1306_WHITE);
 
-    int8_t minTemp = 100;
-    int8_t maxTemp = -100;
-
-    if (!this->plotAutoscale)
+    this->minTemp = 15;
+    this->maxTemp = 30;
+    if (this->plotAutoscale)
     {
-        this->minTemp = 15;
-        this->maxTemp = 30;
+        this->minTemp = 100;
+        this->maxTemp = -100;
+        for (int ix = LOG_LENGTH_BYTES - 1; ix > 0; ix--)
+        {
+            if (Peripherals::buttonA->isPressed() || Peripherals::buttonB->isPressed())
+            {
+                Status::abortLoop = true;
+                return;
+            }
+
+            int8_t temperature = (Peripherals::eeprom->eeprom_read(EEPROM_T_LOG_BASE + ix) - 127) / 2;
+            this->minTemp = min(this->minTemp, temperature);
+            this->maxTemp = max(this->maxTemp, temperature);
+        }
     }
 
     uint8_t vTick = max(abs((this->maxTemp - this->minTemp) / 3), 2);
@@ -79,7 +90,13 @@ void TemperatureDisplay::plotTemperature()
     bool overflow = false;
 
     for (int ix = LOG_LENGTH_BYTES - 1; ix > 0; ix--)
-    {        
+    {
+        if (Peripherals::buttonA->isPressed() || Peripherals::buttonB->isPressed())
+        {
+            Status::abortLoop = true;
+            return;
+        }
+
         uint8_t readingPointer = (logPtr + ix) % LOG_LENGTH_BYTES;
 
         float temperaturePointB = (Peripherals::eeprom->eeprom_read(EEPROM_T_LOG_BASE + readingPointer) - 127) / 2;
@@ -103,9 +120,6 @@ void TemperatureDisplay::plotTemperature()
         }
 
         temperaturePointA = temperaturePointB;
-
-        minTemp = min(minTemp, temperaturePointA);
-        maxTemp = max(maxTemp, temperaturePointA);
     }
 
     Peripherals::oled->fillRect(0, 5, 50, 10, SSD1306_BLACK);
@@ -119,6 +133,4 @@ void TemperatureDisplay::plotTemperature()
     Peripherals::oled->display();
 
     this->replotNeeded = false;
-    this->minTemp = minTemp;
-    this->maxTemp = maxTemp;
 }

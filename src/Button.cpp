@@ -58,6 +58,11 @@ void Button::loop()
         }
     }
 
+    if (Status::abortLoop)
+    {
+        return;
+    }
+
     while (this->isPressed())
     {
         delay(1);

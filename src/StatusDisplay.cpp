@@ -22,9 +22,14 @@ void StatusDisplay::displayStatus()
 
     Peripherals::oled->setCursor(0, 18);
     Peripherals::oled->print("VBAT:  ");
-    Peripherals::oled->println(Status::getBatteryVoltage());
+    Peripherals::oled->print(Status::getBatteryVoltage());
+    Peripherals::oled->println(" mV");
     Peripherals::oled->print("BAT:   ");
-    Peripherals::oled->println(Status::getBatteryLevel());
-
+    Peripherals::oled->print(Status::getBatteryLevel());
+    Peripherals::oled->println(" %");
+    Peripherals::oled->print("RAM:   ");
+    Peripherals::oled->print(Status::getFreeRamBytes());
+    Peripherals::oled->println(" Bytes");
+    
     Peripherals::oled->display();    
 }

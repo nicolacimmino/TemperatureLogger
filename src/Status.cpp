@@ -2,6 +2,7 @@
 
 unsigned long Status::lastTimeSync = 0;
 long Status::batteryVoltage = 0;
+bool Status::abortLoop = false;
 
 bool Status::isTimeSynced()
 {
@@ -57,4 +58,14 @@ uint8_t Status::getBatteryLevel()
     batteryLevel = (0.9 * (float)batteryLevel) + (0.1 * (float)measuredLevel);
 
     return batteryLevel;
+}
+
+/**
+ * See https://playground.arduino.cc/Code/AvailableMemory/
+ **/
+int Status::getFreeRamBytes()
+{
+    extern int __heap_start, *__brkval;
+    int v;
+    return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
 }
