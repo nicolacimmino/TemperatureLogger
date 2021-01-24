@@ -20,7 +20,7 @@
 #define PIN_BUTTON_A 5
 #define PIN_BUTTON_B 6
 #define PIN_PWR_AUX_DEVS 9
-#define DISPLAY_MODES 2
+#define DISPLAY_MODES 3
 #define POWER_SAVE_TIMEOUT_MS 20000
 #define RECORD_DATA_INTERVAL_MS 300000 // 5 minutes
 

@@ -1,6 +1,7 @@
 #include "Status.h"
 
 unsigned long Status::lastTimeSync = 0;
+long Status::batteryVoltage = 0;
 
 bool Status::isTimeSynced()
 {
@@ -10,6 +11,11 @@ bool Status::isTimeSynced()
 void Status::timeSynced()
 {
     lastTimeSync = millis();
+}
+
+long Status::getBatteryVoltage()
+{
+    return Status::batteryVoltage;
 }
 
 uint8_t Status::getBatteryLevel()
@@ -35,12 +41,12 @@ uint8_t Status::getBatteryLevel()
     while (bit_is_set(ADCSRA, ADSC))
         ;
 
-    long measuredVcc = 1125300L / (ADCL | (ADCH << 8));
+    Status::batteryVoltage = 1125300L / (ADCL | (ADCH << 8));
     analogReference(DEFAULT);
 
     // We assume 3900mV max and 2900 being the safe discharge level. 3900-2900 => 1000
     // 1000 / 10 => 100 (%).
-    uint8_t measuredLevel = min(max((measuredVcc - 2900) / 10, 0), 100);
+    uint8_t measuredLevel = min(max((Status::batteryVoltage - 2900) / 10, 0), 100);
 
     // Init the IIR filter with the first sample otherwise the % indicator will ramp up slowly at power on.
     if (batteryLevel == 0)

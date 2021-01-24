@@ -7,11 +7,13 @@ class Status
 {
 private:
     static unsigned long lastTimeSync;
-
-public:
+    static long batteryVoltage;
+    
+public:    
     static bool isTimeSynced();
     static void timeSynced();
     static uint8_t getBatteryLevel();    
+    static long getBatteryVoltage();
 };
 
 #endif

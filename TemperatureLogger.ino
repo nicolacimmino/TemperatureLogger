@@ -30,6 +30,7 @@
 #include "src/Button.h"
 #include "src/TimeDisplay.h"
 #include "src/TemperatureDisplay.h"
+#include "src/StatusDisplay.h"
 #include "src/Peripherals.h"
 
 Display *currentDisplay = NULL;
@@ -81,6 +82,9 @@ void enterMode()
         break;
     case 1:
         currentDisplay = new TemperatureDisplay();
+        break;
+    case 2:
+        currentDisplay = new StatusDisplay();
         break;
     }
 }
@@ -150,10 +154,10 @@ void setup()
 }
 
 void loop()
-{    
+{
     PowerManager::loop();
     recordData();
     Peripherals::buttonA->loop();
     Peripherals::buttonB->loop();
-    currentDisplay->loop();   
+    currentDisplay->loop();
 }
