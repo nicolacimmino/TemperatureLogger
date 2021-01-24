@@ -150,10 +150,10 @@ void setup()
 }
 
 void loop()
-{
+{    
     PowerManager::loop();
     recordData();
     Peripherals::buttonA->loop();
     Peripherals::buttonB->loop();
-    currentDisplay->loop();
+    currentDisplay->loop();   
 }
