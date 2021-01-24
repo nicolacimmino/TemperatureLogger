@@ -3,6 +3,7 @@
 unsigned long Status::lastTimeSync = 0;
 long Status::batteryVoltage = 0;
 bool Status::abortLoopRequested = false;
+bool Status::timeSyncRequsted = true;
 
 static void Status::abortLoop()
 {
@@ -19,6 +20,11 @@ static void Status::loopAborted()
     Status::abortLoopRequested = false;
 }
 
+bool Status::shouldTimeSync()
+{
+    return Status::timeSyncRequsted;
+}
+
 bool Status::isTimeSynced()
 {
     return (lastTimeSync > 0) && (millis() - lastTimeSync) < 86400000;
@@ -27,6 +33,12 @@ bool Status::isTimeSynced()
 void Status::timeSynced()
 {
     lastTimeSync = millis();
+    Status::timeSyncRequsted = false;
+}
+
+void Status::timeSyncFailed()
+{
+    Status::timeSyncRequsted = false;
 }
 
 long Status::getBatteryVoltage()

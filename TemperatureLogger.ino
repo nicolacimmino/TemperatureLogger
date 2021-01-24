@@ -145,12 +145,7 @@ void setup()
 
     Peripherals::rtc = new uRTCLib(0x68);
 
-    DCServicesLite *dcServices = new DCServicesLite(DC_RADIO_NRF24_V2, Peripherals::rtc);
-    if (dcServices->syncRTCToTimeBroadcast())
-    {
-        Status::timeSynced();
-    }
-    delete dcServices;
+    Peripherals::dcServices = new DCServicesLite(DC_RADIO_NRF24_V2, Peripherals::rtc);
 
     Peripherals::eeprom = new uEEPROMLib(0x57);
 
@@ -178,5 +173,15 @@ void loop()
     if (Status::shouldAbortLoop())
     {
         Status::loopAborted();
+    }
+
+    if (Status::shouldTimeSync())
+    {
+        if (Peripherals::dcServices->syncRTCToTimeBroadcast())
+        {
+            Status::timeSynced();
+        } else {
+            Status::timeSyncFailed();
+        }
     }
 }

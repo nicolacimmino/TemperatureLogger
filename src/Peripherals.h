@@ -7,6 +7,7 @@
 #include <Sodaq_SHT2x.h>
 #include <uRTCLib.h>
 #include <uEEPROMLib.h>
+#include <DCServicesLite.h>
 #include "Button.h"
 
 class Peripherals
@@ -18,6 +19,7 @@ public:
     static uEEPROMLib *eeprom;
     static Button *buttonA;
     static Button *buttonB;
+    static DCServicesLite *dcServices;
 };
 
 #endif
