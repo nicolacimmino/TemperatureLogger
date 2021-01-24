@@ -15,10 +15,10 @@ void TemperatureDisplay::loop()
     this->plotTemperature();
 }
 
-uint8_t TemperatureDisplay::temperatrureToYOffset(float temperature, int8_t minTemp, int8_t maxTemp)
+uint8_t TemperatureDisplay::temperatrureToYOffset(float temperature)
 {
-    temperature = max(min(maxTemp, temperature), minTemp);
-    return PLOT_Y_TOP + PLOT_Y_PIXELS - floor((PLOT_Y_PIXELS * (temperature - minTemp)) / (maxTemp - minTemp));
+    temperature = max(min(this->maxTemp, temperature), this->minTemp);
+    return PLOT_Y_TOP + PLOT_Y_PIXELS - floor((PLOT_Y_PIXELS * (temperature - this->minTemp)) / (this->maxTemp - this->minTemp));
 }
 
 uint8_t TemperatureDisplay::plotIndexToXOffset(uint8_t ix)
@@ -35,7 +35,7 @@ void TemperatureDisplay::plotTemperature()
         return;
     }
 
-    clearDisplay();
+    this->clearDisplay();
 
     Peripherals::oled->setCursor(0, 5);
     Peripherals::oled->print("BUSY....");
@@ -47,29 +47,20 @@ void TemperatureDisplay::plotTemperature()
     int8_t minTemp = 100;
     int8_t maxTemp = -100;
 
-    if (this->plotAutoscale)
+    if (!this->plotAutoscale)
     {
-        for (int ix = LOG_LENGTH_BYTES - 1; ix > 0; ix--)
-        {
-            int8_t temperature = (Peripherals::eeprom->eeprom_read(EEPROM_T_LOG_BASE + ix) - 127) / 2;
-            minTemp = min(minTemp, temperature);
-            maxTemp = max(maxTemp, temperature);
-        }
-    }
-    else
-    {
-        minTemp = 15;
-        maxTemp = 30;
+        this->minTemp = 15;
+        this->maxTemp = 30;
     }
 
-    uint8_t vTick = max(abs((maxTemp - minTemp) / 3), 2);
+    uint8_t vTick = max(abs((this->maxTemp - this->minTemp) / 3), 2);
 
     for (uint8_t ix = PLOT_X_LEFT; ix < PLOT_X_RIGHT; ix += 4)
     {
-        for (int8_t t = minTemp; t <= maxTemp; t += vTick)
+        for (int8_t t = this->minTemp; t <= this->maxTemp; t += vTick)
         {
-            Peripherals::oled->drawPixel(ix, temperatrureToYOffset(t, minTemp, maxTemp), SSD1306_WHITE);
-            Peripherals::oled->setCursor(0, temperatrureToYOffset(t, minTemp, maxTemp) - (2 + (t == maxTemp ? -3 : 0)));
+            Peripherals::oled->drawPixel(ix, temperatrureToYOffset(t), SSD1306_WHITE);
+            Peripherals::oled->setCursor(0, temperatrureToYOffset(t) - (2 + (t == this->maxTemp ? -3 : 0)));
             Peripherals::oled->print(t);
         }
     }
@@ -99,19 +90,22 @@ void TemperatureDisplay::plotTemperature()
             continue;
         }
 
-        Peripherals::oled->drawLine(plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointA, minTemp, maxTemp), plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointB, minTemp, maxTemp), SSD1306_WHITE);
+        Peripherals::oled->drawLine(plotIndexToXOffset(ix + 1), temperatrureToYOffset(temperaturePointA), plotIndexToXOffset(ix), temperatrureToYOffset(temperaturePointB), SSD1306_WHITE);
 
         if (ix % 10 == 0)
         {
             Peripherals::oled->display();
         }
 
-        if (temperaturePointA > maxTemp || temperaturePointA < minTemp)
+        if (temperaturePointA > this->maxTemp || temperaturePointA < this->minTemp)
         {
             overflow = true;
         }
 
         temperaturePointA = temperaturePointB;
+
+        minTemp = min(minTemp, temperaturePointA);
+        maxTemp = max(maxTemp, temperaturePointA);
     }
 
     Peripherals::oled->fillRect(0, 5, 50, 10, SSD1306_BLACK);
@@ -125,4 +119,6 @@ void TemperatureDisplay::plotTemperature()
     Peripherals::oled->display();
 
     this->replotNeeded = false;
+    this->minTemp = minTemp;
+    this->maxTemp = maxTemp;
 }
