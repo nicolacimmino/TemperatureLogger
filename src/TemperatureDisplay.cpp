@@ -38,7 +38,7 @@ void TemperatureDisplay::plotTemperature()
     this->clearDisplay();
 
     Peripherals::oled->setCursor(0, 5);
-    Peripherals::oled->print("BUSY....");
+    Peripherals::oled->print(F("BUSY...."));
     Peripherals::oled->display();
 
     Peripherals::oled->drawLine(PLOT_X_LEFT, PLOT_Y_BOTTOM, PLOT_X_RIGHT, PLOT_Y_BOTTOM, SSD1306_WHITE);
@@ -127,7 +127,7 @@ void TemperatureDisplay::plotTemperature()
     if (overflow)
     {
         Peripherals::oled->setCursor(0, 5);
-        Peripherals::oled->print("OVFL");
+        Peripherals::oled->print(F("OVFL"));
     }
 
     Peripherals::oled->display();
