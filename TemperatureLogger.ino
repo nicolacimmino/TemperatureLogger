@@ -24,7 +24,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Sodaq_SHT2x.h>
-#include <DCServices.h>
+#include <DCServicesLite.h>
 
 #include "src/Button.h"
 #include "src/TimeDisplay.h"
@@ -145,7 +145,7 @@ void setup()
 
     Peripherals::rtc = new uRTCLib(0x68);
 
-    DCServices *dcServices = new DCServices(DC_RADIO_NRF24_V2, Peripherals::rtc);
+    DCServicesLite *dcServices = new DCServicesLite(DC_RADIO_NRF24_V2, Peripherals::rtc);
     if (dcServices->syncRTCToTimeBroadcast())
     {
         Status::timeSynced();
