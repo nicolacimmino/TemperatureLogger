@@ -16,9 +16,14 @@ void Button::registerOnLongPressCallback(void (*callback)())
     this->onLongPress = callback;
 }
 
+bool Button::isPressed()
+{
+    return digitalRead(this->pin) == LOW;
+}
+
 void Button::loop()
 {
-    if (digitalRead(this->pin) != LOW)
+    if (!this->isPressed())
     {
         return;
     }
@@ -27,18 +32,18 @@ void Button::loop()
     byte debounce = 0x55;
     while (debounce != 0x00)
     {
-        debounce = (debounce << 1) | (digitalRead(this->pin) & 1);
+        debounce = (debounce << 1) | (this->isPressed() ? 0 : 1);
         delay(1);
     }
 
     // Wait for the switch to be released or a timeout of 500mS to expire.
     unsigned long initialTime = millis();
-    while ((millis() - initialTime < 500) && digitalRead(this->pin) == LOW)
+    while ((millis() - initialTime < 500) && this->isPressed())
     {
         delay(1);
     }
 
-    if (digitalRead(this->pin) == LOW)
+    if (this->isPressed())
     {
         if (this->onLongPress != NULL)
         {
@@ -53,7 +58,7 @@ void Button::loop()
         }
     }
 
-    while (digitalRead(this->pin) == LOW)
+    while (this->isPressed())
     {
         delay(1);
     }

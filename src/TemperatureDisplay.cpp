@@ -79,7 +79,7 @@ void TemperatureDisplay::plotTemperature()
     bool overflow = false;
 
     for (int ix = LOG_LENGTH_BYTES - 1; ix > 0; ix--)
-    {
+    {        
         uint8_t readingPointer = (logPtr + ix) % LOG_LENGTH_BYTES;
 
         float temperaturePointB = (Peripherals::eeprom->eeprom_read(EEPROM_T_LOG_BASE + readingPointer) - 127) / 2;

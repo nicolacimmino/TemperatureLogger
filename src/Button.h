@@ -15,6 +15,7 @@ public:
     void registerOnClickCallback(void (*callback)());
     void registerOnLongPressCallback(void (*callback)());
     void loop();
+    bool isPressed();
 };
 
 #endif
