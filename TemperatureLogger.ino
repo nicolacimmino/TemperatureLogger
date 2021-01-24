@@ -16,7 +16,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see http://www.gnu.org/licenses/.
 //
-
 #include <Arduino.h>
 #include <avr/sleep.h>
 #include <Wire.h>
@@ -94,6 +93,7 @@ void changeMode()
     mode = (mode + 1) % DISPLAY_MODES;
     enterMode();
 }
+
 void onButtonAClick()
 {
     if (PowerManager::level == PS_LEVEL_0)
@@ -120,9 +120,23 @@ void onButtonBClick()
     currentDisplay->loop();
 }
 
+void buttonPressedISR()
+{
+    static unsigned long lastInterruptTime = 0;
+
+    if (millis() - lastInterruptTime > 200)
+    {
+        Status::abortLoop();
+    }
+    lastInterruptTime = millis();
+}
+
 void setup()
 {
     Serial.begin(9600);
+
+    attachInterrupt(digitalPinToInterrupt(PIN_BUTTON_A), buttonPressedISR, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_BUTTON_B), buttonPressedISR, FALLING);
 
     pinMode(PIN_PWR_AUX_DEVS, OUTPUT);
     digitalWrite(PIN_PWR_AUX_DEVS, HIGH);
@@ -159,12 +173,10 @@ void loop()
     recordData();
     Peripherals::buttonA->loop();
     Peripherals::buttonB->loop();
-
-    if (Status::abortLoop)
-    {
-        Status::abortLoop = false;
-        return;
-    }
-
     currentDisplay->loop();
+
+    if (Status::shouldAbortLoop())
+    {
+        Status::loopAborted();
+    }
 }

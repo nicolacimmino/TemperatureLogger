@@ -7,7 +7,7 @@ void StatusDisplay::onBClick()
 
 void StatusDisplay::loop()
 {
-    if (PowerManager::level != PS_LEVEL_0)
+    if (PowerManager::level != PS_LEVEL_0 || Status::shouldAbortLoop())
     {
         return;
     }
@@ -30,6 +30,6 @@ void StatusDisplay::displayStatus()
     Peripherals::oled->print(F("RAM:   "));
     Peripherals::oled->print(Status::getFreeRamBytes());
     Peripherals::oled->println(F(" Bytes"));
-    
-    Peripherals::oled->display();    
+
+    Peripherals::oled->display();
 }

@@ -8,7 +8,7 @@ void TimeDisplay::onBClick()
 
 void TimeDisplay::loop()
 {
-    if (PowerManager::level != PS_LEVEL_0)
+    if (PowerManager::level != PS_LEVEL_0 || Status::shouldAbortLoop())
     {
         return;
     }

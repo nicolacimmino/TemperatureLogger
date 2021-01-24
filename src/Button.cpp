@@ -23,7 +23,7 @@ bool Button::isPressed()
 
 void Button::loop()
 {
-    if (!this->isPressed())
+    if (!this->isPressed() || Status::shouldAbortLoop())
     {
         return;
     }
@@ -43,7 +43,7 @@ void Button::loop()
         delay(1);
     }
 
-    if (this->isPressed())
+    if (this->isPressed() && this->onLongPress != NULL)
     {
         if (this->onLongPress != NULL)
         {
@@ -58,12 +58,7 @@ void Button::loop()
         }
     }
 
-    if (Status::abortLoop)
-    {
-        return;
-    }
-
-    while (this->isPressed())
+    while (this->isPressed() && !Status::shouldAbortLoop())
     {
         delay(1);
     }

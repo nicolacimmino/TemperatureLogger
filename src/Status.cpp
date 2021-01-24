@@ -2,7 +2,22 @@
 
 unsigned long Status::lastTimeSync = 0;
 long Status::batteryVoltage = 0;
-bool Status::abortLoop = false;
+bool Status::abortLoopRequested = false;
+
+static void Status::abortLoop()
+{
+    Status::abortLoopRequested = true;
+}
+
+static bool Status::shouldAbortLoop()
+{
+    return Status::abortLoopRequested;
+}
+
+static void Status::loopAborted()
+{
+    Status::abortLoopRequested = false;
+}
 
 bool Status::isTimeSynced()
 {

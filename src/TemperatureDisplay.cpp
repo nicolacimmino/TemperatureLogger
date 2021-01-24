@@ -7,7 +7,7 @@ void TemperatureDisplay::onBClick()
 
 void TemperatureDisplay::loop()
 {
-    if (PowerManager::level != PS_LEVEL_0)
+    if (PowerManager::level != PS_LEVEL_0 || Status::shouldAbortLoop())
     {
         return;
     }
@@ -52,9 +52,8 @@ void TemperatureDisplay::plotTemperature()
         this->maxTemp = -100;
         for (int ix = LOG_LENGTH_BYTES - 1; ix > 0; ix--)
         {
-            if (Peripherals::buttonA->isPressed() || Peripherals::buttonB->isPressed())
+            if (Status::shouldAbortLoop())
             {
-                Status::abortLoop = true;
                 return;
             }
 
@@ -91,9 +90,8 @@ void TemperatureDisplay::plotTemperature()
 
     for (int ix = LOG_LENGTH_BYTES - 1; ix > 0; ix--)
     {
-        if (Peripherals::buttonA->isPressed() || Peripherals::buttonB->isPressed())
+        if (Status::shouldAbortLoop())
         {
-            Status::abortLoop = true;
             return;
         }
 
