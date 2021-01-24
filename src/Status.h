@@ -15,6 +15,7 @@ public:
     static void abortLoop();
     static bool shouldAbortLoop();
     static void loopAborted();
+    static bool timeSync();
     static bool shouldTimeSync();
     static bool isTimeSynced();
     static void timeSynced();

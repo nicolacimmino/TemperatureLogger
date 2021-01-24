@@ -20,6 +20,11 @@ static void Status::loopAborted()
     Status::abortLoopRequested = false;
 }
 
+bool Status::timeSync()
+{
+    Status::timeSyncRequsted = true;
+}
+
 bool Status::shouldTimeSync()
 {
     return Status::timeSyncRequsted;

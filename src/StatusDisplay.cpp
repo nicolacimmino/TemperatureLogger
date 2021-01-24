@@ -2,7 +2,12 @@
 
 void StatusDisplay::onBClick()
 {
-    //
+    return;
+}
+
+void StatusDisplay::onBLongPress()
+{
+    return;
 }
 
 void StatusDisplay::loop()

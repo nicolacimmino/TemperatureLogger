@@ -19,6 +19,7 @@ private:
 public:
     void loop();
     void onBClick();
+    void onBLongPress();        
 };
 
 #endif

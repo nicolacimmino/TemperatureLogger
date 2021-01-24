@@ -6,6 +6,11 @@ void TimeDisplay::onBClick()
     this->lastModeChangeTime = millis();
 }
 
+void TimeDisplay::onBLongPress()
+{
+    Status::timeSync();
+}
+
 void TimeDisplay::loop()
 {
     if (PowerManager::level != PS_LEVEL_0 || Status::shouldAbortLoop())
@@ -55,7 +60,7 @@ void TimeDisplay::displayTime()
         Peripherals::oled->print(text);
     }
 
-    if (this->lastSensorReadingTime == 0 ||  millis() - this->lastSensorReadingTime > TIME_SENSOR_READ_INTERVAL_MS)
+    if (this->lastSensorReadingTime == 0 || millis() - this->lastSensorReadingTime > TIME_SENSOR_READ_INTERVAL_MS)
     {
         this->temperature = (SHT2x.GetTemperature() * 10) / 10.0;
         this->humidity = round(SHT2x.GetHumidity());

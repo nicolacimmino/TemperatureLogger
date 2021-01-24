@@ -8,10 +8,11 @@ class StatusDisplay : public Display
 {
 private:
     void displayStatus();
-    
+
 public:
     void loop();
     void onBClick();
+    void onBLongPress();
 };
 
 #endif

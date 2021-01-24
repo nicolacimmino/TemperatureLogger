@@ -5,6 +5,11 @@ void TemperatureDisplay::onBClick()
     this->plotAutoscale = !this->plotAutoscale;
 }
 
+void TemperatureDisplay::onBLongPress()
+{
+    return;
+}
+
 void TemperatureDisplay::loop()
 {
     if (PowerManager::level != PS_LEVEL_0 || Status::shouldAbortLoop())

@@ -94,6 +94,14 @@ void changeMode()
     enterMode();
 }
 
+void onButtonPress()
+{
+    PowerManager::onUserInteratcion();
+
+    currentDisplay->onDisplayInvalidated();
+    currentDisplay->loop();
+}
+
 void onButtonAClick()
 {
     if (PowerManager::level == PS_LEVEL_0)
@@ -101,10 +109,7 @@ void onButtonAClick()
         changeMode();
     }
 
-    PowerManager::onUserInteratcion();
-
-    currentDisplay->onDisplayInvalidated();
-    currentDisplay->loop();
+    onButtonPress();
 }
 
 void onButtonBClick()
@@ -114,10 +119,17 @@ void onButtonBClick()
         currentDisplay->onBClick();
     }
 
-    PowerManager::onUserInteratcion();
+    onButtonPress();
+}
 
-    currentDisplay->onDisplayInvalidated();
-    currentDisplay->loop();
+void onButtonBLongPress()
+{
+    if (PowerManager::level == PS_LEVEL_0)
+    {
+        currentDisplay->onBLongPress();
+    }
+
+    onButtonPress();
 }
 
 void buttonPressedISR()
@@ -153,6 +165,7 @@ void setup()
     Peripherals::buttonA->registerOnClickCallback(onButtonAClick);
     Peripherals::buttonB = new Button(PIN_BUTTON_B);
     Peripherals::buttonB->registerOnClickCallback(onButtonBClick);
+    Peripherals::buttonB->registerOnLongPressCallback(onButtonBLongPress);
 
     Peripherals::oled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
     Peripherals::oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);

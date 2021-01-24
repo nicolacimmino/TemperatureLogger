@@ -22,3 +22,8 @@ void Display::plotBatterLevel()
 
     Peripherals::oled->drawBitmap(110, 5, batteryLogo[round(batteryLevel / 25.0)], BATTERY_LOGO_W, BATTERY_LOGO_H, SSD1306_WHITE);
 }
+
+void Display::onBLongPress()
+{
+    return;
+}

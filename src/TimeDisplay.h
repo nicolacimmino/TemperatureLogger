@@ -21,9 +21,11 @@ private:
     unsigned long lastSensorReadingTime = 0;
     float temperature;
     float humidity;
-public:    
+
+public:
     void loop();
-    void onBClick();    
+    void onBClick();
+    void onBLongPress();
 };
 
 #endif
