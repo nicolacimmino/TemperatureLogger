@@ -31,6 +31,8 @@ void PowerManager::enterL2()
 {
     previousLevel = level;
 
+    Peripherals::oled->clearDisplay();
+    Peripherals::oled->display();
     Peripherals::oled->ssd1306_command(SSD1306_DISPLAYOFF);
     digitalWrite(PIN_PWR_AUX_DEVS, LOW);
 
