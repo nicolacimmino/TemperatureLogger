@@ -19,16 +19,11 @@
 #include <Arduino.h>
 #include <avr/sleep.h>
 #include <Wire.h>
-#include <uRTCLib.h>
-#include <uEEPROMLib.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
-#include <Sodaq_SHT2x.h>
-#include <DCServicesLite.h>
 
 #include "src/Button.h"
 #include "src/TimeDisplay.h"
 #include "src/TemperatureDisplay.h"
+#include "src/HumidityDisplay.h"
 #include "src/StatusDisplay.h"
 #include "src/Peripherals.h"
 
@@ -52,10 +47,13 @@ void recordData()
     }
 
     uint8_t temperatureEncoded = 127 + (SHT2x.GetTemperature() * 2);
+    uint8_t humidityEncoded = SHT2x.GetHumidity();
 
     uint8_t logPtr = Peripherals::eeprom->eeprom_read(EEPROM_LOG_PTR);
-    Peripherals::eeprom->eeprom_write(EEPROM_T_LOG_BASE + logPtr, temperatureEncoded);
-    logPtr = (logPtr + 1) % LOG_LENGTH_BYTES;
+    Peripherals::eeprom->eeprom_write(EEPROM_T_LOG_BASE + (logPtr * LOG_ENTRY_BYTES), temperatureEncoded);
+    Peripherals::eeprom->eeprom_write(EEPROM_T_LOG_BASE + (logPtr * LOG_ENTRY_BYTES) + 1, humidityEncoded);
+
+    logPtr = (logPtr + 1) % LOG_LENGTH_POINTS;
     Peripherals::eeprom->eeprom_write(EEPROM_LOG_PTR, logPtr);
 
     currentDisplay->onDisplayInvalidated();
@@ -83,6 +81,9 @@ void enterMode()
         currentDisplay = new TemperatureDisplay();
         break;
     case 2:
+        currentDisplay = new HumidityDisplay();
+        break;
+    case 3:
         currentDisplay = new StatusDisplay();
         break;
     }
@@ -186,6 +187,8 @@ void loop()
     if (Status::shouldAbortLoop())
     {
         Status::loopAborted();
+
+        return;
     }
 
     if (Status::shouldTimeSync())
@@ -193,7 +196,9 @@ void loop()
         if (Peripherals::dcServices->syncRTCToTimeBroadcast())
         {
             Status::timeSynced();
-        } else {
+        }
+        else
+        {
             Status::timeSyncFailed();
         }
     }
