@@ -37,7 +37,7 @@ void TimeDisplay::displayTime()
 
     if (this->mode == TIME_MODE_TIME)
     {
-        sprintf(text, "%02i:%02i", Peripherals::rtc->hour(), Peripherals::rtc->minute());
+        sprintf(text, "%02i%s%02i", Peripherals::rtc->hour(), (Peripherals::rtc->second() % 2 ? ":" : " ")  ,Peripherals::rtc->minute());
         Peripherals::oled->setTextSize(3);
         Peripherals::oled->setCursor(18, 21);
         Peripherals::oled->print(text);
