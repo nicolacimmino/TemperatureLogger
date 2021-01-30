@@ -8,6 +8,7 @@
 #include <uRTCLib.h>
 #include <uEEPROMLib.h>
 #include <DCServicesLite.h>
+#include "config.h"
 #include "Button.h"
 
 class Peripherals
@@ -20,6 +21,7 @@ public:
     static Button *buttonA;
     static Button *buttonB;
     static DCServicesLite *dcServices;
+    static void setup();
 };
 
 #endif
