@@ -23,5 +23,5 @@ float TemperatureDisplay::getVTick()
 
 void TemperatureDisplay::printPlotTitle()
 {    
-    Peripherals::oled->print(F("Temp"));
+    Peripherals::oled->print(F("Temperature"));
 }
