@@ -57,7 +57,7 @@ void GraphDisplay::plot()
                 return;
             }
 
-            float value = this->getValueFromRawRecord(DataStore::getStoredValue(ix));
+            float value = this->getValueFromRawRecord(DataStore::getStoredValue(ix, this->getRawRecordOffset()));
             this->minVal = min(this->minVal, value);
             this->maxVal = max(this->maxVal, value);
         }
@@ -83,7 +83,7 @@ void GraphDisplay::plot()
     Peripherals::oled->display();
 
     float pointA = 0;
-    
+
     bool overflow = false;
 
     for (int ix = LOG_LENGTH_POINTS - 1; ix > 0; ix--)
@@ -93,7 +93,7 @@ void GraphDisplay::plot()
             return;
         }
 
-        float pointB = this->getValueFromRawRecord(DataStore::getStoredValue(ix));
+        float pointB = this->getValueFromRawRecord(DataStore::getStoredValue(ix, this->getRawRecordOffset()));
 
         if (ix == LOG_LENGTH_POINTS - 1)
         {

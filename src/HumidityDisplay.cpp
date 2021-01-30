@@ -6,12 +6,17 @@ void HumidityDisplay::setDefaultRange()
     this->maxVal = 100;
 }
 
-float HumidityDisplay::getValueFromRawRecord(uint16_t record)
+uint8_t HumidityDisplay::getRawRecordOffset()
 {
-    return record & 0xFF;
+    return DATASTORE_RAW_OFFSET_HUMIDITY;
+}
+
+float HumidityDisplay::getValueFromRawRecord(uint8_t record)
+{
+    return record;
 }
 
 float HumidityDisplay::getVTick()
 {
-    return 20;
+    return 25;
 }

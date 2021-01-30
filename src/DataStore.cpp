@@ -18,11 +18,12 @@ void DataStore::advanceLogPtr()
     DataStore::logPtrCache = LOG_PTR_CACHE_INVALID;
 }
 
-uint16_t DataStore::getStoredValue(uint16_t ix)
+uint8_t DataStore::getStoredValue(uint16_t ix, uint8_t offset)
 {
     uint8_t readingPointer = (DataStore::getLogPtr() + ix) % LOG_LENGTH_POINTS;
+    readingPointer = EEPROM_T_LOG_BASE + (readingPointer * LOG_ENTRY_BYTES) + offset;
 
-    return Peripherals::eeprom->eeprom_read(EEPROM_T_LOG_BASE + (readingPointer * LOG_ENTRY_BYTES)) << 8 | Peripherals::eeprom->eeprom_read(EEPROM_T_LOG_BASE + (readingPointer * LOG_ENTRY_BYTES) + 1);
+    return Peripherals::eeprom->eeprom_read(readingPointer);
 }
 
 bool DataStore::recordData()

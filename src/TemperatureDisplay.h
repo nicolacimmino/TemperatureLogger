@@ -9,7 +9,8 @@ class TemperatureDisplay : public GraphDisplay
 private:
 protected:
     void setDefaultRange();
-    float getValueFromRawRecord(uint16_t record);
+    float getValueFromRawRecord(uint8_t record);
+    uint8_t getRawRecordOffset();
     float getVTick();
 
 public:

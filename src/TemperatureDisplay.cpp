@@ -6,9 +6,14 @@ void TemperatureDisplay::setDefaultRange()
     this->maxVal = 30;
 }
 
-float TemperatureDisplay::getValueFromRawRecord(uint16_t record)
+uint8_t TemperatureDisplay::getRawRecordOffset()
 {
-    return ((record >> 8) - 127) / 2;
+    return DATASTORE_RAW_OFFSET_TEMPERATURE;
+}
+
+float TemperatureDisplay::getValueFromRawRecord(uint8_t record)
+{
+    return (record - 127) / 2;
 }
 
 float TemperatureDisplay::getVTick()

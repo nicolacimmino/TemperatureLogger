@@ -6,6 +6,8 @@
 #include "PowerManager.h"
 
 #define LOG_PTR_CACHE_INVALID 0xFFFF
+#define DATASTORE_RAW_OFFSET_TEMPERATURE 0
+#define DATASTORE_RAW_OFFSET_HUMIDITY 1
 
 class DataStore
 {
@@ -13,9 +15,10 @@ private:
     static void advanceLogPtr();
     static uint16_t getLogPtr();
     static uint16_t logPtrCache;
+
 public:
     static bool recordData();
-    static uint16_t getStoredValue(uint16_t ix);
+    static uint8_t getStoredValue(uint16_t ix, uint8_t offset);
 };
 
 #endif
