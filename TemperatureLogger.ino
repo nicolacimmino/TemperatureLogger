@@ -21,60 +21,23 @@
 #include <Wire.h>
 
 #include "src/Button.h"
-#include "src/TimeDisplay.h"
-#include "src/TemperatureDisplay.h"
-#include "src/HumidityDisplay.h"
-#include "src/StatusDisplay.h"
 #include "src/Peripherals.h"
 #include "src/DataStore.h"
-
-Display *currentDisplay = NULL;
-uint8_t mode = 0;
-
-void enterMode()
-{
-
-    if (currentDisplay != NULL)
-    {
-        delete currentDisplay;
-    }
-
-    switch (mode)
-    {
-    case 0:
-        currentDisplay = new TimeDisplay();
-        break;
-    case 1:
-        currentDisplay = new TemperatureDisplay();
-        break;
-    case 2:
-        currentDisplay = new HumidityDisplay();
-        break;
-    case 3:
-        currentDisplay = new StatusDisplay();
-        break;
-    }
-}
-
-void changeMode()
-{
-    mode = (mode + 1) % DISPLAY_MODES;
-    enterMode();
-}
+#include "src/ModeManager.h"
 
 void onButtonPress()
 {
     PowerManager::onUserInteratcion();
 
-    currentDisplay->onDisplayInvalidated();
-    currentDisplay->loop();
+    ModeManager::currentDisplay->onDisplayInvalidated();
+    ModeManager::currentDisplay->loop();
 }
 
 void onButtonAClick()
 {
     if (PowerManager::level == PS_LEVEL_0)
     {
-        changeMode();
+        ModeManager::changeMode();
     }
 
     onButtonPress();
@@ -84,7 +47,7 @@ void onButtonBClick()
 {
     if (PowerManager::level == PS_LEVEL_0)
     {
-        currentDisplay->onBClick();
+        ModeManager::currentDisplay->onBClick();
     }
 
     onButtonPress();
@@ -94,7 +57,7 @@ void onButtonBLongPress()
 {
     if (PowerManager::level == PS_LEVEL_0)
     {
-        currentDisplay->onBLongPress();
+        ModeManager::currentDisplay->onBLongPress();
     }
 
     onButtonPress();
@@ -121,7 +84,7 @@ void setup()
     Wire.begin();
 
     Peripherals::setup();
-    
+
     if (Peripherals::buttonA->isPressed() && Peripherals::buttonB->isPressed())
     {
         DataStore::wipeStoredData();
@@ -134,7 +97,7 @@ void setup()
     Peripherals::buttonB->registerOnClickCallback(onButtonBClick);
     Peripherals::buttonB->registerOnLongPressCallback(onButtonBLongPress);
 
-    enterMode();
+    ModeManager::setup();
 }
 
 void loop()
@@ -142,11 +105,11 @@ void loop()
     PowerManager::loop();
     if (DataStore::recordData())
     {
-        currentDisplay->onDisplayInvalidated();
+        ModeManager::currentDisplay->onDisplayInvalidated();
     }
     Peripherals::buttonA->loop();
     Peripherals::buttonB->loop();
-    currentDisplay->loop();
+    ModeManager::currentDisplay->loop();
 
     if (Status::shouldAbortLoop())
     {
