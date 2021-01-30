@@ -26,43 +26,10 @@
 #include "src/HumidityDisplay.h"
 #include "src/StatusDisplay.h"
 #include "src/Peripherals.h"
+#include "src/DataStore.h"
 
 Display *currentDisplay = NULL;
 uint8_t mode = 0;
-
-void recordData()
-{
-    static unsigned long lastRecord = millis();
-    if (millis() - lastRecord < RECORD_DATA_INTERVAL_MS)
-    {
-        return;
-    }
-    lastRecord = millis();
-
-    bool restoreLevel = false;
-    if (PowerManager::level > PS_LEVEL_1)
-    {
-        PowerManager::enterL1();
-        restoreLevel = true;
-    }
-
-    uint8_t temperatureEncoded = 127 + (SHT2x.GetTemperature() * 2);
-    uint8_t humidityEncoded = SHT2x.GetHumidity();
-
-    uint8_t logPtr = Peripherals::eeprom->eeprom_read(EEPROM_LOG_PTR);
-    Peripherals::eeprom->eeprom_write(EEPROM_T_LOG_BASE + (logPtr * LOG_ENTRY_BYTES), temperatureEncoded);
-    Peripherals::eeprom->eeprom_write(EEPROM_T_LOG_BASE + (logPtr * LOG_ENTRY_BYTES) + 1, humidityEncoded);
-
-    logPtr = (logPtr + 1) % LOG_LENGTH_POINTS;
-    Peripherals::eeprom->eeprom_write(EEPROM_LOG_PTR, logPtr);
-
-    currentDisplay->onDisplayInvalidated();
-
-    if (restoreLevel)
-    {
-        PowerManager::restoreLevel();
-    }
-}
 
 void enterMode()
 {
@@ -179,7 +146,10 @@ void setup()
 void loop()
 {
     PowerManager::loop();
-    recordData();
+    if (DataStore::recordData())
+    {
+        currentDisplay->onDisplayInvalidated();
+    }
     Peripherals::buttonA->loop();
     Peripherals::buttonB->loop();
     currentDisplay->loop();

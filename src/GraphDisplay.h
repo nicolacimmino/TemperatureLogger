@@ -3,11 +3,11 @@
 #define __TEMPERATURE_LOGGER_GRAPH_DISPLAY_H__
 
 #include "Display.h"
+#include "DataStore.h"
 
 class GraphDisplay : public Display
 {
 private:
-    uEEPROMLib *eeprom;
     bool plotAutoscale = false;
 
     uint8_t valueToYOffset(float value);

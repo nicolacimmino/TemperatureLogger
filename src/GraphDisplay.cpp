@@ -32,11 +32,6 @@ uint8_t GraphDisplay::plotIndexToXOffset(uint8_t ix)
     return ix + PLOT_X_LEFT;
 }
 
-uint16_t GraphDisplay::getStoredValue(uint8_t ix)
-{    
-    return Peripherals::eeprom->eeprom_read(EEPROM_T_LOG_BASE + (ix * LOG_ENTRY_BYTES)) << 8 | Peripherals::eeprom->eeprom_read(EEPROM_T_LOG_BASE + (ix * LOG_ENTRY_BYTES) + 1);
-}
-
 void GraphDisplay::plot()
 {
 
@@ -62,7 +57,7 @@ void GraphDisplay::plot()
                 return;
             }
 
-            float value = this->getValueFromRawRecord(this->getStoredValue(ix));
+            float value = this->getValueFromRawRecord(DataStore::getStoredValue(ix));
             this->minVal = min(this->minVal, value);
             this->maxVal = max(this->maxVal, value);
         }
@@ -88,9 +83,7 @@ void GraphDisplay::plot()
     Peripherals::oled->display();
 
     float pointA = 0;
-
-    uint16_t logPtr = Peripherals::eeprom->eeprom_read(EEPROM_LOG_PTR);
-
+    
     bool overflow = false;
 
     for (int ix = LOG_LENGTH_POINTS - 1; ix > 0; ix--)
@@ -100,9 +93,7 @@ void GraphDisplay::plot()
             return;
         }
 
-        uint8_t readingPointer = (logPtr + ix) % LOG_LENGTH_POINTS;
-
-        float pointB = this->getValueFromRawRecord(this->getStoredValue(readingPointer));
+        float pointB = this->getValueFromRawRecord(DataStore::getStoredValue(ix));
 
         if (ix == LOG_LENGTH_POINTS - 1)
         {
