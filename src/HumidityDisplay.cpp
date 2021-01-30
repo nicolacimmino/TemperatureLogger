@@ -18,10 +18,11 @@ float HumidityDisplay::getValueFromRawRecord(uint8_t record)
 
 float HumidityDisplay::getVTick()
 {
-    return 25;
+    uint8_t vTick = max(abs((this->maxVal - this->minVal) / 3), 5);
+    return vTick + 4 - (vTick + 4) % 5;
 }
 
 void HumidityDisplay::printPlotTitle()
-{    
+{
     Peripherals::oled->print(F("Humidity"));
 }
