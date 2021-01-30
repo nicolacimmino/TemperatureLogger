@@ -115,30 +115,27 @@ void setup()
 {
     Serial.begin(9600);
 
-    attachInterrupt(digitalPinToInterrupt(PIN_BUTTON_A), buttonPressedISR, FALLING);
-    attachInterrupt(digitalPinToInterrupt(PIN_BUTTON_B), buttonPressedISR, FALLING);
-
     pinMode(PIN_PWR_AUX_DEVS, OUTPUT);
     digitalWrite(PIN_PWR_AUX_DEVS, HIGH);
 
     Wire.begin();
 
-    Peripherals::rtc = new uRTCLib(0x68);
-
-    Peripherals::dcServices = new DCServicesLite(DC_RADIO_NRF24_V2, Peripherals::rtc);
-
-    Peripherals::eeprom = new uEEPROMLib(0x57);
-
     Peripherals::buttonA = new Button(PIN_BUTTON_A);
-    Peripherals::buttonA->registerOnClickCallback(onButtonAClick);
     Peripherals::buttonB = new Button(PIN_BUTTON_B);
-    Peripherals::buttonB->registerOnClickCallback(onButtonBClick);
-    Peripherals::buttonB->registerOnLongPressCallback(onButtonBLongPress);
-
+    Peripherals::rtc = new uRTCLib(0x68);
+    Peripherals::dcServices = new DCServicesLite(DC_RADIO_NRF24_V2, Peripherals::rtc);
+    Peripherals::eeprom = new uEEPROMLib(0x57);
     Peripherals::oled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
     Peripherals::oled->begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDRESS);
     Peripherals::oled->clearDisplay();
     Peripherals::oled->display();
+
+    attachInterrupt(digitalPinToInterrupt(PIN_BUTTON_A), buttonPressedISR, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_BUTTON_B), buttonPressedISR, FALLING);
+
+    Peripherals::buttonA->registerOnClickCallback(onButtonAClick);
+    Peripherals::buttonB->registerOnClickCallback(onButtonBClick);
+    Peripherals::buttonB->registerOnLongPressCallback(onButtonBLongPress);
 
     enterMode();
 }

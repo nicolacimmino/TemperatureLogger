@@ -2,6 +2,16 @@
 
 uint16_t DataStore::logPtrCache = LOG_PTR_CACHE_INVALID;
 
+void DataStore::wipeStoredData()
+{
+    for (uint16_t ix = EEPROM_LOG_BASE; ix < EEPROM_LOG_BASE + (LOG_LENGTH_POINTS * LOG_ENTRY_BYTES); ix++)
+    {
+        Peripherals::eeprom->eeprom_write(ix, LOG_ENTRY_UNUSED);
+    }
+
+    Peripherals::eeprom->eeprom_write(EEPROM_LOG_PTR, 0);
+}
+
 uint16_t DataStore::getLogPtr()
 {
     if (DataStore::logPtrCache == LOG_PTR_CACHE_INVALID)
@@ -21,7 +31,7 @@ void DataStore::advanceLogPtr()
 uint8_t DataStore::getStoredValue(uint16_t ix, uint8_t offset)
 {
     uint8_t readingPointer = (DataStore::getLogPtr() + ix) % LOG_LENGTH_POINTS;
-    readingPointer = EEPROM_T_LOG_BASE + (readingPointer * LOG_ENTRY_BYTES) + offset;
+    readingPointer = EEPROM_LOG_BASE + (readingPointer * LOG_ENTRY_BYTES) + offset;
 
     return Peripherals::eeprom->eeprom_read(readingPointer);
 }
@@ -46,8 +56,8 @@ bool DataStore::recordData()
     uint8_t humidityEncoded = SHT2x.GetHumidity();
 
     uint16_t logPtr = DataStore::getLogPtr();
-    Peripherals::eeprom->eeprom_write(EEPROM_T_LOG_BASE + (logPtr * LOG_ENTRY_BYTES), temperatureEncoded);
-    Peripherals::eeprom->eeprom_write(EEPROM_T_LOG_BASE + (logPtr * LOG_ENTRY_BYTES) + 1, humidityEncoded);
+    Peripherals::eeprom->eeprom_write(EEPROM_LOG_BASE + (logPtr * LOG_ENTRY_BYTES), temperatureEncoded);
+    Peripherals::eeprom->eeprom_write(EEPROM_LOG_BASE + (logPtr * LOG_ENTRY_BYTES) + 1, humidityEncoded);
 
     DataStore::advanceLogPtr();
 

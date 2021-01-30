@@ -50,14 +50,20 @@ void GraphDisplay::plot()
     {
         this->minVal = 100;
         this->maxVal = -100;
-        for (int ix = 0; ix < LOG_LENGTH_POINTS; ix++)
+        for (int ix = LOG_LENGTH_POINTS - 1; ix > 0; ix--)
         {
             if (Status::shouldAbortLoop())
             {
                 return;
             }
 
-            float value = this->getValueFromRawRecord(DataStore::getStoredValue(ix, this->getRawRecordOffset()));
+            uint8_t storedValue = DataStore::getStoredValue(ix, this->getRawRecordOffset());
+            if (storedValue == LOG_ENTRY_UNUSED)
+            {
+                break;
+            }
+
+            float value = this->getValueFromRawRecord(storedValue);
             this->minVal = min(this->minVal, value);
             this->maxVal = max(this->maxVal, value);
         }
@@ -93,7 +99,13 @@ void GraphDisplay::plot()
             return;
         }
 
-        float pointB = this->getValueFromRawRecord(DataStore::getStoredValue(ix, this->getRawRecordOffset()));
+        uint8_t storedValue = DataStore::getStoredValue(ix, this->getRawRecordOffset());
+        if (storedValue == LOG_ENTRY_UNUSED)
+        {
+            break;
+        }
+
+        float pointB = this->getValueFromRawRecord(storedValue);
 
         if (ix == LOG_LENGTH_POINTS - 1)
         {
