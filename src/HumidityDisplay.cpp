@@ -20,3 +20,8 @@ float HumidityDisplay::getVTick()
 {
     return 25;
 }
+
+void HumidityDisplay::printPlotTitle()
+{    
+    Peripherals::oled->print(F("Humidity"));
+}

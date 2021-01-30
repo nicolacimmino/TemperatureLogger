@@ -12,7 +12,8 @@ protected:
     float getValueFromRawRecord(uint8_t record);
     uint8_t getRawRecordOffset();
     float getVTick();
-
+    void printPlotTitle();
+    
 public:
 };
 

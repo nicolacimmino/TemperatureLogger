@@ -130,10 +130,13 @@ void GraphDisplay::plot()
 
     Peripherals::oled->fillRect(0, 5, 50, 10, SSD1306_BLACK);
 
+    Peripherals::oled->setCursor(0, 5);
+    this->printPlotTitle();
+
     if (overflow)
     {
-        Peripherals::oled->setCursor(0, 5);
-        Peripherals::oled->print(F("OVFL"));
+        Peripherals::oled->setCursor(58, 5);
+        Peripherals::oled->print(F("OVF"));
     }
 
     Peripherals::oled->display();

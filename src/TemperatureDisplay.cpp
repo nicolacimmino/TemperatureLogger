@@ -20,3 +20,8 @@ float TemperatureDisplay::getVTick()
 {
     return max(abs((this->maxVal - this->minVal) / 3), 2);
 }
+
+void TemperatureDisplay::printPlotTitle()
+{    
+    Peripherals::oled->print(F("Temp"));
+}

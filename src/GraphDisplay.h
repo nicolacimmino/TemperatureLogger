@@ -22,7 +22,8 @@ protected:
     virtual void setDefaultRange() = 0;
     virtual float getValueFromRawRecord(uint8_t record) = 0;
     virtual uint8_t getRawRecordOffset() = 0;
-    virtual float getVTick() = 0;
+    virtual float getVTick() = 0;    
+    virtual void printPlotTitle() = 0;
 
 public:
     void loop();
