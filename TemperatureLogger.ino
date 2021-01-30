@@ -130,6 +130,11 @@ void setup()
     Peripherals::oled->clearDisplay();
     Peripherals::oled->display();
 
+    if (Peripherals::buttonA->isPressed() && Peripherals::buttonB->isPressed())
+    {
+        DataStore::wipeStoredData();
+    }
+
     attachInterrupt(digitalPinToInterrupt(PIN_BUTTON_A), buttonPressedISR, FALLING);
     attachInterrupt(digitalPinToInterrupt(PIN_BUTTON_B), buttonPressedISR, FALLING);
 

@@ -8,8 +8,8 @@ class Button
 {
 private:
     uint8_t pin;
-    void (*onClick)();
-    void (*onLongPress)();    
+    void (*onClick)() = NULL;
+    void (*onLongPress)() = NULL;    
 public:
     Button(uint8_t pin);
     void registerOnClickCallback(void (*callback)());

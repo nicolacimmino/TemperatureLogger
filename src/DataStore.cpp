@@ -4,9 +4,22 @@ uint16_t DataStore::logPtrCache = LOG_PTR_CACHE_INVALID;
 
 void DataStore::wipeStoredData()
 {
-    for (uint16_t ix = EEPROM_LOG_BASE; ix < EEPROM_LOG_BASE + (LOG_LENGTH_POINTS * LOG_ENTRY_BYTES); ix++)
+    Peripherals::oled->setTextSize(2);
+    Peripherals::oled->setTextColor(SSD1306_WHITE);
+    
+    for (uint16_t ix = 0; ix < (LOG_LENGTH_POINTS * LOG_ENTRY_BYTES); ix++)
     {
-        Peripherals::eeprom->eeprom_write(ix, LOG_ENTRY_UNUSED);
+        Peripherals::eeprom->eeprom_write(EEPROM_LOG_BASE + ix, LOG_ENTRY_UNUSED);
+
+        if (ix % 10 == 0)
+        {
+            Peripherals::oled->clearDisplay();
+            Peripherals::oled->setCursor(0, 20);
+            Peripherals::oled->print("Wiping ");
+            Peripherals::oled->print(ix * 100 / (LOG_LENGTH_POINTS * LOG_ENTRY_BYTES));
+            Peripherals::oled->print("%");
+            Peripherals::oled->display();
+        }
     }
 
     Peripherals::eeprom->eeprom_write(EEPROM_LOG_PTR, 0);
