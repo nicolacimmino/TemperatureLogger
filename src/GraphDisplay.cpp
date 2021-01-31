@@ -3,6 +3,7 @@
 void GraphDisplay::onBClick()
 {
     this->plotAutoscale = !this->plotAutoscale;
+    this->replotNeeded = true;
 }
 
 void GraphDisplay::onBLongPress()

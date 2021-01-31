@@ -9,7 +9,7 @@
 #define LOG_ENTRY_UNUSED 0xFF
 
 #define LOG_PTR_CACHE_INVALID 0xFFFF
-#define DATA_STORE_VALUE_NOT_INITIALIZED -9999
+#define DATA_STORE_VALUE_NOT_INITIALIZED 0xFF
 #define DATASTORE_RAW_OFFSET_TEMPERATURE 0
 #define DATASTORE_RAW_OFFSET_HUMIDITY 1
 
@@ -22,10 +22,11 @@ private:
     static uint16_t getLogPtr();
     static uint16_t logPtrCache;
     static void recordData();
-
-public:
     static float temperature;
-    static float humidity;
+public:
+    static int8_t getTemperatureDegrees();
+    static uint8_t getTemperatureDecimalDegrees();
+    static uint8_t humidity;
     static void loop();
     static uint8_t getStoredValue(uint16_t ix, uint8_t offset);
     static void wipeStoredData();

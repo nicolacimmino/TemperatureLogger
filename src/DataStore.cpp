@@ -5,7 +5,7 @@ uint16_t DataStore::logPtrCache = LOG_PTR_CACHE_INVALID;
 unsigned long DataStore::lastRecordTime = 0;
 unsigned long DataStore::lastSampleTime = 0;
 float DataStore::temperature = DATA_STORE_VALUE_NOT_INITIALIZED;
-float DataStore::humidity = DATA_STORE_VALUE_NOT_INITIALIZED;
+uint8_t DataStore::humidity = DATA_STORE_VALUE_NOT_INITIALIZED;
 
 void DataStore::wipeStoredData()
 {
@@ -73,13 +73,13 @@ void DataStore::loop()
     if (DataStore::temperature == DATA_STORE_VALUE_NOT_INITIALIZED)
     {
         DataStore::temperature = SHT2x.GetTemperature();
-        DataStore::humidity = SHT2x.GetHumidity();
+        DataStore::humidity = round(SHT2x.GetHumidity());
     }
     else
     {
 
         DataStore::temperature = (DataStore::temperature * 0.9) + (SHT2x.GetTemperature() * 0.1);
-        DataStore::humidity = (DataStore::humidity * 0.9) + (SHT2x.GetHumidity() * 0.1);
+        DataStore::humidity = round((DataStore::humidity * 0.9) + (SHT2x.GetHumidity() * 0.1));
     }
 
     if (millis() - DataStore::lastRecordTime > RECORD_DATA_INTERVAL_MS)
@@ -97,13 +97,22 @@ void DataStore::loop()
 void DataStore::recordData()
 {
     uint8_t temperatureEncoded = 127 + (DataStore::temperature * 2);
-    uint8_t humidityEncoded = DataStore::humidity;
 
     uint16_t logPtr = DataStore::getLogPtr();
     Peripherals::eeprom->eeprom_write(EEPROM_LOG_BASE + (logPtr * LOG_ENTRY_BYTES), temperatureEncoded);
-    Peripherals::eeprom->eeprom_write(EEPROM_LOG_BASE + (logPtr * LOG_ENTRY_BYTES) + 1, humidityEncoded);
+    Peripherals::eeprom->eeprom_write(EEPROM_LOG_BASE + (logPtr * LOG_ENTRY_BYTES) + 1, DataStore::humidity);
 
     DataStore::advanceLogPtr();
 
     ModeManager::currentDisplay->onDataStoreChange();
+}
+
+int8_t DataStore::getTemperatureDegrees()
+{    
+    return floor(DataStore::temperature);    
+}
+
+uint8_t DataStore::getTemperatureDecimalDegrees()
+{
+    return 10 * (DataStore::temperature - floor(DataStore::temperature));
 }

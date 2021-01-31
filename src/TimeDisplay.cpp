@@ -60,13 +60,13 @@ void TimeDisplay::displayTime()
         Peripherals::oled->print(text);
     }
 
-    sprintf(text, "%sC", dtostrf(DataStore::temperature, 3, 1, textB));
+    sprintf(text, "%i.%iC", DataStore::getTemperatureDegrees(), DataStore::getTemperatureDecimalDegrees());
     Peripherals::oled->setTextSize(2);
     Peripherals::oled->setCursor(0, 50);
     Peripherals::oled->print(text);
 
-    sprintf(text, "%s%%", dtostrf(DataStore::humidity, 3, 0, textB));
-    Peripherals::oled->setCursor(80, 50);
+    sprintf(text, "%i%%", DataStore::humidity);
+    Peripherals::oled->setCursor(90, 50);
     Peripherals::oled->print(text);
 
     Peripherals::oled->display();
