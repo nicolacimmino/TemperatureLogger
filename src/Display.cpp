@@ -1,6 +1,11 @@
 #include "Display.h"
 
-void Display::onDisplayInvalidated()
+void Display::onDataStoreChange()
+{
+    this->replotNeeded = true;
+}
+
+void Display::onDisplayAwaken()
 {
     this->replotNeeded = true;
 }

@@ -22,14 +22,14 @@
 
 #include "src/Button.h"
 #include "src/Peripherals.h"
-#include "src/DataStore.h"
 #include "src/ModeManager.h"
+#include "src/DataStore.h"
+
 
 void onButtonPress()
 {
     PowerManager::onUserInteratcion();
-
-    ModeManager::currentDisplay->onDisplayInvalidated();
+    
     ModeManager::currentDisplay->loop();
 }
 
@@ -103,10 +103,7 @@ void setup()
 void loop()
 {
     PowerManager::loop();
-    if (DataStore::recordData())
-    {
-        ModeManager::currentDisplay->onDisplayInvalidated();
-    }
+    DataStore::loop();
     Peripherals::buttonA->loop();
     Peripherals::buttonB->loop();
     ModeManager::currentDisplay->loop();

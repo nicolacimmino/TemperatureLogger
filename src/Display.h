@@ -20,7 +20,8 @@ public:
     virtual void loop() = 0;
     virtual void onBClick() = 0;
     virtual void onBLongPress() = 0;    
-    void onDisplayInvalidated();
+    void onDataStoreChange();
+    void onDisplayAwaken();
 };
 
 #endif

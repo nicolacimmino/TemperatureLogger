@@ -2,8 +2,8 @@
 #ifndef __TEMPERATURE_LOGGER_GRAPH_DISPLAY_H__
 #define __TEMPERATURE_LOGGER_GRAPH_DISPLAY_H__
 
-#include "Display.h"
 #include "DataStore.h"
+#include "Display.h"
 
 class GraphDisplay : public Display
 {

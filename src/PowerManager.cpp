@@ -1,5 +1,6 @@
 
 #include "PowerManager.h"
+#include "ModeManager.h"
 
 unsigned long PowerManager::lastUserInteractionTime = millis();
 uint8_t PowerManager::level = PS_LEVEL_0;
@@ -60,6 +61,8 @@ void PowerManager::onUserInteratcion()
     if (level != PS_LEVEL_0)
     {
         enterL0();
+
+        ModeManager::currentDisplay->onDisplayAwaken();
     }
 }
 

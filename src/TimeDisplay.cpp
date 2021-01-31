@@ -37,7 +37,7 @@ void TimeDisplay::displayTime()
 
     if (this->mode == TIME_MODE_TIME)
     {
-        sprintf(text, "%02i%s%02i", Peripherals::rtc->hour(), (Peripherals::rtc->second() % 2 ? ":" : " ")  ,Peripherals::rtc->minute());
+        sprintf(text, "%02i%s%02i", Peripherals::rtc->hour(), (Peripherals::rtc->second() % 2 ? ":" : " "), Peripherals::rtc->minute());
         Peripherals::oled->setTextSize(3);
         Peripherals::oled->setCursor(18, 21);
         Peripherals::oled->print(text);
@@ -60,19 +60,12 @@ void TimeDisplay::displayTime()
         Peripherals::oled->print(text);
     }
 
-    if (this->lastSensorReadingTime == 0 || millis() - this->lastSensorReadingTime > TIME_SENSOR_READ_INTERVAL_MS)
-    {
-        this->temperature = (SHT2x.GetTemperature() * 10) / 10.0;
-        this->humidity = round(SHT2x.GetHumidity());
-        this->lastSensorReadingTime = millis();
-    }
-
-    sprintf(text, "%sC", dtostrf(this->temperature, 3, 1, textB));
+    sprintf(text, "%sC", dtostrf(DataStore::temperature, 3, 1, textB));
     Peripherals::oled->setTextSize(2);
     Peripherals::oled->setCursor(0, 50);
     Peripherals::oled->print(text);
 
-    sprintf(text, "%s%%", dtostrf(this->humidity, 3, 0, textB));
+    sprintf(text, "%s%%", dtostrf(DataStore::humidity, 3, 0, textB));
     Peripherals::oled->setCursor(80, 50);
     Peripherals::oled->print(text);
 

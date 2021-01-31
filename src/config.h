@@ -24,5 +24,5 @@
 #define DISPLAY_MODES 4
 #define POWER_SAVE_TIMEOUT_MS 20000
 #define RECORD_DATA_INTERVAL_MS 300000 // 5 minutes
-
+#define SAMPLE_DATA_INTERVAL_MS 5000   // 5 seconds
 #endif
